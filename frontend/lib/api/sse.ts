@@ -1,18 +1,15 @@
-import { API_BASE_URL, TOKEN_STORAGE_KEY } from "./config";
+import { API_BASE_URL, getStoredToken } from "./config";
 
 /**
  * Fetch-based SSE reader. Native EventSource cannot send Authorization headers,
- * which we need for JWT Bearer (ADR 0005 + 0004).
+ * which we need for JWT Bearer (ADR 0005 + 0004). Orval does not generate this.
  */
 export async function readSseStream(
   path: string,
   onEvent: (data: unknown) => void,
   signal?: AbortSignal,
 ): Promise<void> {
-  const token =
-    typeof window !== "undefined"
-      ? window.localStorage.getItem(TOKEN_STORAGE_KEY)
-      : null;
+  const token = getStoredToken();
   if (!token) throw new Error("Not authenticated");
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -41,9 +38,7 @@ export async function readSseStream(
     buffer = chunks.pop() ?? "";
 
     for (const chunk of chunks) {
-      const dataLine = chunk
-        .split("\n")
-        .find((line) => line.startsWith("data:"));
+      const dataLine = chunk.split("\n").find((line) => line.startsWith("data:"));
       if (!dataLine) continue;
       const raw = dataLine.slice(5).trim();
       try {

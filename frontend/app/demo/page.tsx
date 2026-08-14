@@ -2,8 +2,11 @@
 
 import { SseDemoPanel } from "@/features/idea";
 import { getStoredToken } from "@/lib/api";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function DemoPage() {
   const [ready, setReady] = useState(false);
@@ -14,27 +17,38 @@ export default function DemoPage() {
     setReady(true);
   }, []);
 
-  if (!ready) return <p>Loading…</p>;
+  if (!ready) return <p className="text-muted-foreground">Loading…</p>;
 
   if (!authed) {
     return (
-      <main>
-        <p>
-          Sign in required for the SSE demo.{" "}
-          <Link href="/login">Login</Link> or <Link href="/register">Register</Link>.
-        </p>
-      </main>
+      <Card className="max-w-lg">
+        <CardHeader>
+          <CardTitle>Sign in required</CardTitle>
+          <CardDescription>The SSE demo needs a Bearer token.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex gap-3">
+          <Link href="/login" className={cn(buttonVariants())}>
+            Login
+          </Link>
+          <Link href="/register" className={cn(buttonVariants({ variant: "outline" }))}>
+            Register
+          </Link>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <main style={{ display: "grid", gap: "1rem", maxWidth: 720 }}>
-      <h1 style={{ margin: 0 }}>SSE demo</h1>
-      <p style={{ margin: 0 }}>
-        In-request Server-Sent Events from <code>/api/idea/demo/stream</code> with Bearer
-        JWT.
-      </p>
-      <SseDemoPanel />
-    </main>
+    <Card className="max-w-3xl">
+      <CardHeader>
+        <CardTitle>SSE demo</CardTitle>
+        <CardDescription>
+          In-request Server-Sent Events from <code>/api/idea/demo/stream</code> with Bearer JWT.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <SseDemoPanel />
+      </CardContent>
+    </Card>
   );
 }

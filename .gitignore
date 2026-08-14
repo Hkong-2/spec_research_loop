@@ -13,4 +13,5 @@ __pycache__/
 .env.local
 *.egg-info/
 .DS_Store
+*.tsbuildinfo
 graphify-out/

@@ -62,7 +62,8 @@ Shared: `app/core`, `app/db`, `app/ports` (LLM, object storage), `app/adapters`,
 
 - `app/` — thin App Router routes (client-heavy)
 - `features/{identity,idea,research,spec,judgement}/` — UI by workflow
-- `lib/api/` — hand client + `schema.d.ts` from `pnpm codegen`
+- `lib/api/` — Orval + TanStack Query (`pnpm codegen`); SSE stays hand-written
+- `components/ui/` — shadcn/ui (Tailwind, zinc)
 - `NEXT_PUBLIC_API_BASE_URL` — FastAPI origin (no Next rewrite BFF)
 
 ## Cross-cutting decisions (summary)
@@ -70,7 +71,8 @@ Shared: `app/core`, `app/db`, `app/ports` (LLM, object storage), `app/adapters`,
 | Topic | Choice | ADR |
 |-------|--------|-----|
 | Process shape | Modular monolith, five modules | [0001](./docs/adr/0001-modular-monolith-modules.md) |
-| UI ↔ API | SPA + OpenAPI codegen; env API base URL | [0002](./docs/adr/0002-spa-openapi-client.md) |
+| UI ↔ API | SPA + Orval/TanStack Query; env API base URL | [0007](./docs/adr/0007-orval-tanstack-query.md) (supersedes [0002](./docs/adr/0002-spa-openapi-client.md)) |
+| UI kit | shadcn/ui + Tailwind (zinc, light first) | [0008](./docs/adr/0008-shadcn-tailwind.md) |
 | Data | Postgres + S3-compatible object store | [0003](./docs/adr/0003-postgres-s3-persistence.md) |
 | Long work | SSE, in-request async streaming | [0004](./docs/adr/0004-sse-in-request-streaming.md) |
 | Auth | Email/password Accounts, JWT Bearer | [0005](./docs/adr/0005-email-password-jwt-accounts.md) |

@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+
+import { Button } from "@/components/ui/button";
 import { readSseStream } from "@/lib/api";
 
 type LogItem = { at: string; payload: unknown };
@@ -25,10 +27,7 @@ export function SseDemoPanel() {
       await readSseStream(
         "/api/idea/demo/stream",
         (payload) => {
-          setLogs((prev) => [
-            ...prev,
-            { at: new Date().toLocaleTimeString(), payload },
-          ]);
+          setLogs((prev) => [...prev, { at: new Date().toLocaleTimeString(), payload }]);
         },
         controller.signal,
       );
@@ -47,26 +46,17 @@ export function SseDemoPanel() {
   }
 
   return (
-    <section style={{ display: "grid", gap: "0.75rem" }}>
-      <div style={{ display: "flex", gap: "0.5rem" }}>
-        <button type="button" onClick={start} disabled={running}>
+    <section className="grid gap-3">
+      <div className="flex gap-2">
+        <Button type="button" onClick={start} disabled={running}>
           {running ? "Streaming…" : "Start SSE demo"}
-        </button>
-        <button type="button" onClick={stop} disabled={!running}>
+        </Button>
+        <Button type="button" variant="outline" onClick={stop} disabled={!running}>
           Stop
-        </button>
+        </Button>
       </div>
-      {error ? <p style={{ color: "crimson", margin: 0 }}>{error}</p> : null}
-      <pre
-        style={{
-          background: "#111",
-          color: "#eee",
-          padding: "1rem",
-          borderRadius: 8,
-          minHeight: 160,
-          overflow: "auto",
-        }}
-      >
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      <pre className="min-h-40 overflow-auto rounded-lg bg-zinc-950 p-4 text-sm text-zinc-100">
         {logs.length === 0
           ? "Events will appear here."
           : logs.map((item) => `${item.at} ${JSON.stringify(item.payload)}`).join("\n")}

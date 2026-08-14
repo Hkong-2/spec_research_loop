@@ -1,14 +1,19 @@
 "use client";
 
 import { AuthForm } from "@/features/identity";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
   const router = useRouter();
   return (
-    <main style={{ display: "grid", gap: "1rem", maxWidth: 420 }}>
-      <h1 style={{ margin: 0 }}>Create Account</h1>
-      <AuthForm mode="register" onSuccess={() => router.push("/demo")} />
-    </main>
+    <Card className="max-w-md">
+      <CardHeader>
+        <CardTitle>Create Account</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <AuthForm mode="register" onSuccess={() => router.push("/demo")} />
+      </CardContent>
+    </Card>
   );
 }

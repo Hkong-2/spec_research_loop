@@ -17,13 +17,10 @@ function loadEnvLocal() {
 }
 
 loadEnvLocal();
-const base = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
-const url = `${base.replace(/\/$/, "")}/openapi.json`;
-const out = "lib/api/schema.d.ts";
 
-const result = spawnSync(
-  "pnpm",
-  ["exec", "openapi-typescript", url, "-o", out],
-  { stdio: "inherit", shell: true },
-);
+const result = spawnSync("pnpm", ["exec", "orval"], {
+  stdio: "inherit",
+  shell: true,
+  env: process.env,
+});
 process.exit(result.status ?? 1);

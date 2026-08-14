@@ -1,4 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+
+import { AppProviders } from "./providers";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "SpecResearch Loop",
@@ -12,30 +16,26 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        style={{
-          margin: 0,
-          fontFamily: "system-ui, sans-serif",
-          lineHeight: 1.45,
-          background: "#fafafa",
-          color: "#111",
-        }}
-      >
-        <header
-          style={{
-            display: "flex",
-            gap: "1rem",
-            padding: "1rem 1.5rem",
-            borderBottom: "1px solid #ddd",
-            background: "#fff",
-          }}
-        >
-          <a href="/">Home</a>
-          <a href="/login">Login</a>
-          <a href="/register">Register</a>
-          <a href="/demo">SSE demo</a>
-        </header>
-        <div style={{ padding: "1.5rem" }}>{children}</div>
+      <body className="min-h-svh antialiased">
+        <AppProviders>
+          <header className="border-b bg-card">
+            <nav className="mx-auto flex max-w-5xl items-center gap-4 px-6 py-3 text-sm">
+              <Link href="/" className="font-medium">
+                SpecResearch Loop
+              </Link>
+              <Link href="/login" className="text-muted-foreground hover:text-foreground">
+                Login
+              </Link>
+              <Link href="/register" className="text-muted-foreground hover:text-foreground">
+                Register
+              </Link>
+              <Link href="/demo" className="text-muted-foreground hover:text-foreground">
+                SSE demo
+              </Link>
+            </nav>
+          </header>
+          <div className="mx-auto max-w-5xl px-6 py-8">{children}</div>
+        </AppProviders>
       </body>
     </html>
   );
