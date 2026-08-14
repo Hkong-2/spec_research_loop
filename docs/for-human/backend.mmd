@@ -1,0 +1,169 @@
+---
+title: "Backend — Loop Session, versions, context, invalidation"
+config:
+  theme: "default"
+  layout: "elk"
+---
+flowchart TB
+
+  subgraph Runtime["1. Runtime"]
+    direction TB
+    SPA[SPA]
+
+    subgraph HTTP["HTTP — FastAPI modular monolith"]
+      direction TB
+      IdAPI["/api/identity — register, login, me"]
+      LoopAPI["/api/loop — session CRUD, history, confirm, recompute-prepare"]
+      IdeaAPI["/api/idea — generate / SSE"]
+      ResearchAPI["/api/research — generate / SSE"]
+      SpecAPI["/api/spec — generate / SSE"]
+      JudgementAPI["/api/judgement — generate / SSE"]
+    end
+
+    subgraph LoopMod["loop — orchestration"]
+      direction TB
+      Confirm["confirm(node)"]
+      Prepare["recompute-prepare(Loop Stage)"]
+      Invalidator["Invalidator"]
+      ContextBuilder["Context Projection"]
+      Heads["Loop Session heads<br/>NodeState per DAG node<br/>Produced Spec Version + Valid Spec Version"]
+    end
+
+    subgraph Workflow["Workflow modules — generate, freeze, project"]
+      direction LR
+      Idea["idea — grilling + decomposition"]
+      Research["research — inputs, citations, gap"]
+      SpecMod["spec — Spec Construction + assemble Spec Version"]
+      Judgement["judgement — 5 Judge Runs + aggregator"]
+    end
+
+    subgraph Ports["Ports / adapters — hạ tầng, không phải workflow"]
+      direction LR
+      PortLlm["LlmPort"]
+      PortS3["Object storage"]
+    end
+
+    subgraph PG["PostgreSQL"]
+      direction TB
+      subgraph LoopTables["loop owns"]
+        Account["Account — identity"]
+        Session["Loop Session — editing node + Working Draft prose"]
+        Cards["Card identity + live status + body"]
+        Decisions["Decision — append-only"]
+        Revisions["Stage Revision — immutable — node + n + prose JSONB"]
+        NodeState["NodeState — empty | current | stale"]
+        SpecVer["Spec Version document"]
+      end
+      subgraph Typed["Typed rows — stage_revision_id NULL = working"]
+        Citations["research.Citation"]
+        Links["spec.ClaimEvidenceLink"]
+        Experiments["spec.ExperimentStep"]
+        JudgeRuns["judgement.JudgeRun"]
+      end
+    end
+
+    Artifact["Spec Artifact — S3"]
+
+    SPA --> IdAPI & LoopAPI & IdeaAPI & ResearchAPI & SpecAPI & JudgementAPI
+
+    LoopAPI --> Confirm & Prepare & Heads
+    Confirm --> Invalidator
+    Prepare --> Heads
+    IdeaAPI --> Idea
+    ResearchAPI --> Research
+    SpecAPI --> SpecMod
+    JudgementAPI --> Judgement
+
+    Idea & Research & SpecMod & Judgement --> PortLlm
+    SpecVer --> PortS3
+    Artifact --> PortS3
+
+    Idea & Research & SpecMod & Judgement -->|"freeze / project in-process"| Confirm
+    Confirm -->|"mint on feasibility"| SpecMod
+    ContextBuilder -->|"projectors"| Idea & Research & SpecMod & Judgement
+    Idea & Research & SpecMod & Judgement -->|"Context Projection trước generate"| ContextBuilder
+
+    ContextBuilder -->|"chỉ đọc head current, không đọc Stale"| Heads
+    ContextBuilder -->|"Working Draft + working rows của node đang chạy"| Session
+
+    Session --> Cards & Decisions & Revisions & NodeState & SpecVer
+    Revisions --> Citations & Links & Experiments & JudgeRuns
+    SpecVer --> Artifact
+    SpecVer -->|"Produced: luôn giữ để diff"| Heads
+    SpecVer -->|"Valid: null khi Stale"| ContextBuilder
+
+    Invalidator -->|"đánh stale descendants, không xóa history"| NodeState
+    Invalidator -->|"clear Valid Spec Version nếu spec_version stale"| Heads
+  end
+
+  subgraph Semantics["2. Invalidation + context — tách khỏi ports"]
+    direction TB
+
+    subgraph DAG["Invalidation DAG — confirm khác head mới đánh stale descendants"]
+      direction TB
+      II[idea_interpretation] --> IDec[idea_decomposition]
+      IDec --> RI[research_inputs]
+      RI --> RW[related_work]
+      RW --> GP[gap]
+      GP --> DagContribution["contribution_node"]
+      DagContribution --> CL[claims]
+      CL --> EV[evidence]
+      EV --> EX[experiment_plan]
+      EX --> FS[feasibility]
+      FS --> SV[spec_version]
+
+      IDec & RW & GP & EV --> JGap[gap_judge]
+      RW & GP & DagContribution & EV --> JCon[contribution_judge]
+      RW & CL --> JEvi[evidence_judge]
+      DagContribution & CL & EX & FS --> JExp[experiment_judge]
+      SV --> JConf[conference_judge]
+      JGap & JCon & JEvi & JExp & JConf --> AGG[aggregator]
+    end
+
+    subgraph Recipes["Context recipes — chỉ input còn valid"]
+      direction TB
+      RGap["Gap Judge: Gap + Problem + Related work + Evidence"]
+      RCon["Contribution Judge: contribution_node + Gap + Related work + Evidence"]
+      REvi["Evidence Judge: Claims + Citations + passages + metadata"]
+      RExp["Experiment Judge: Claims + approach + plan + baselines + metrics + compute"]
+      RConf["Conference Judge: Valid Spec Version + gap + contribution_node + claims + evidence + plan"]
+    end
+
+    subgraph Stages["Loop Stage → DAG nodes user recompute"]
+      S1["Grilling: interpretation, decomposition"]
+      S2["Related work: inputs, related_work, gap"]
+      S3["Loop Stage Contribution → DAG contribution_node"]
+      S4["Claims/evidence: claims, evidence"]
+      S5["Experiments: experiment_plan, feasibility → mint Spec Version"]
+      S6["Judges: 5 judges + aggregator — chỉ chạy Judge Stale"]
+      S7["Readiness: read model, không generate"]
+    end
+
+    subgraph WritePath["Confirm / recompute"]
+      direction LR
+      W1["1. prepare: upstream không stale — reset working rows từ last valid revision"]
+      W2["2. generate SSE trên module"]
+      W3["3. confirm trên loop — một transaction"]
+      W4["4. freeze JSONB + clone rows NULL → revision mới"]
+      W5["5. khác head? Invalidator. Khớp? no-op"]
+      W1 --> W2 --> W3 --> W4 --> W5
+    end
+  end
+
+  classDef userNode fill:#ffe0b2,stroke:#fb8c00,stroke-width:2px;
+  classDef workflowNode fill:#e3f2fd,stroke:#1e88e5,stroke-width:2px;
+  classDef artifactNode fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px;
+  classDef contextNode fill:#ffffff,stroke:#fbc02d,stroke-width:2px,stroke-dasharray: 5 5;
+  classDef judgeNode fill:#fff9c4,stroke:#fbc02d,stroke-width:2px;
+  classDef controlNode fill:#ffcdd2,stroke:#e53935,stroke-width:2px;
+  classDef storeNode fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px;
+  classDef portNode fill:#eceff1,stroke:#546e7a,stroke-width:2px;
+
+  class SPA,IdAPI,LoopAPI,IdeaAPI,ResearchAPI,SpecAPI,JudgementAPI userNode;
+  class Idea,Research,SpecMod,Judgement,II,IDec,RI,RW,GP,DagContribution,CL,EV,EX,FS,S1,S2,S3,S4,S5,S6,S7,W1,W2,W3,W4,W5 workflowNode;
+  class Session,Cards,Decisions,Revisions,SpecVer,Artifact,Citations,Links,Experiments,JudgeRuns,Account artifactNode;
+  class ContextBuilder,Recipes,RGap,RCon,REvi,RExp,RConf,Heads,NodeState contextNode;
+  class JGap,JCon,JEvi,JExp,JConf,AGG,SV judgeNode;
+  class Confirm,Prepare,Invalidator,LoopMod controlNode;
+  class PG,LoopTables,Typed storeNode;
+  class PortLlm,PortS3,Ports portNode;
