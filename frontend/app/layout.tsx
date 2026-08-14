@@ -1,12 +1,34 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Atkinson_Hyperlegible, Crimson_Pro, EB_Garamond } from "next/font/google";
+
+import { AppHeader } from "@/components/app-header";
 
 import { AppProviders } from "./providers";
 import "./globals.css";
 
+const atkinson = Atkinson_Hyperlegible({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-atkinson",
+  display: "swap",
+});
+
+const crimson = Crimson_Pro({
+  subsets: ["latin"],
+  variable: "--font-crimson",
+  display: "swap",
+});
+
+const garamond = EB_Garamond({
+  subsets: ["latin"],
+  variable: "--font-garamond",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "SpecResearch Loop",
-  description: "Turn a vague research idea into a verified research specification.",
+  description:
+    "Turn a vague research idea into a verified Research Spec through a human-in-the-loop workflow. Evaluates readiness criteria; does not guarantee conference acceptance.",
 };
 
 export default function RootLayout({
@@ -15,26 +37,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="min-h-svh antialiased">
+    <html lang="en" className={`${atkinson.variable} ${crimson.variable} ${garamond.variable}`}>
+      <body className="min-h-svh font-sans antialiased">
         <AppProviders>
-          <header className="border-b bg-card">
-            <nav className="mx-auto flex max-w-5xl items-center gap-4 px-6 py-3 text-sm">
-              <Link href="/" className="font-medium">
-                SpecResearch Loop
-              </Link>
-              <Link href="/login" className="text-muted-foreground hover:text-foreground">
-                Login
-              </Link>
-              <Link href="/register" className="text-muted-foreground hover:text-foreground">
-                Register
-              </Link>
-              <Link href="/demo" className="text-muted-foreground hover:text-foreground">
-                SSE demo
-              </Link>
-            </nav>
-          </header>
-          <div className="mx-auto max-w-5xl px-6 py-8">{children}</div>
+          <AppHeader />
+          {children}
         </AppProviders>
       </body>
     </html>

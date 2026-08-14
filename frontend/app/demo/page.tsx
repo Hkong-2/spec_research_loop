@@ -2,6 +2,7 @@
 
 import { SseDemoPanel } from "@/features/idea";
 import { getStoredToken } from "@/lib/api";
+import { LoopSessionShell } from "@/components/loop-session-shell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -17,38 +18,51 @@ export default function DemoPage() {
     setReady(true);
   }, []);
 
-  if (!ready) return <p className="text-muted-foreground">Loading…</p>;
+  if (!ready) {
+    return (
+      <p className="px-6 py-8 text-muted-foreground" aria-live="polite">
+        Loading Loop Session…
+      </p>
+    );
+  }
 
   if (!authed) {
     return (
-      <Card className="max-w-lg">
-        <CardHeader>
-          <CardTitle>Sign in required</CardTitle>
-          <CardDescription>The SSE demo needs a Bearer token.</CardDescription>
-        </CardHeader>
-        <CardContent className="flex gap-3">
-          <Link href="/login" className={cn(buttonVariants())}>
-            Login
-          </Link>
-          <Link href="/register" className={cn(buttonVariants({ variant: "outline" }))}>
-            Register
-          </Link>
-        </CardContent>
-      </Card>
+      <div className="mx-auto max-w-lg px-6 py-10">
+        <Card>
+          <CardHeader>
+            <CardTitle>Sign in required</CardTitle>
+            <CardDescription>
+              A Loop Session is saved to your Account. Sign in to continue grilling.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex gap-3">
+            <Link href="/login" className={cn(buttonVariants())}>
+              Sign in
+            </Link>
+            <Link href="/register" className={cn(buttonVariants({ variant: "outline" }))}>
+              Create Account
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <Card className="max-w-3xl">
-      <CardHeader>
-        <CardTitle>SSE demo</CardTitle>
-        <CardDescription>
-          In-request Server-Sent Events from <code>/api/idea/demo/stream</code> with Bearer JWT.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <SseDemoPanel />
-      </CardContent>
-    </Card>
+    <LoopSessionShell currentStageId="grilling">
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-serif text-navy">Grilling</CardTitle>
+          <CardDescription>
+            Streaming questions from <code>/api/idea/demo/stream</code>. Confirm answers in later
+            stages; this demo only shows the event stream.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SseDemoPanel />
+        </CardContent>
+      </Card>
+    </LoopSessionShell>
   );
 }

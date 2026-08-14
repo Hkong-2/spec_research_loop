@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { readSseStream } from "@/lib/api";
 
-type LogItem = { at: string; payload: unknown };
+type LogItem = { id: string; at: string; payload: unknown };
 
 export function SseDemoPanel() {
   const [logs, setLogs] = useState<LogItem[]>([]);
@@ -27,7 +27,14 @@ export function SseDemoPanel() {
       await readSseStream(
         "/api/idea/demo/stream",
         (payload) => {
-          setLogs((prev) => [...prev, { at: new Date().toLocaleTimeString(), payload }]);
+          setLogs((prev) => [
+            ...prev,
+            {
+              id: crypto.randomUUID(),
+              at: new Date().toLocaleTimeString(),
+              payload,
+            },
+          ]);
         },
         controller.signal,
       );
@@ -49,18 +56,28 @@ export function SseDemoPanel() {
     <section className="grid gap-3">
       <div className="flex gap-2">
         <Button type="button" onClick={start} disabled={running}>
-          {running ? "Streaming…" : "Start SSE demo"}
+          {running ? "Streaming…" : "Start grilling stream"}
         </Button>
         <Button type="button" variant="outline" onClick={stop} disabled={!running}>
           Stop
         </Button>
       </div>
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
-      <pre className="min-h-40 overflow-auto rounded-lg bg-zinc-950 p-4 text-sm text-zinc-100">
-        {logs.length === 0
-          ? "Events will appear here."
-          : logs.map((item) => `${item.at} ${JSON.stringify(item.payload)}`).join("\n")}
-      </pre>
+      {error ? (
+        <p className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <ol className="min-h-40 list-none overflow-auto rounded-md bg-navy p-4 font-mono text-sm text-navy-foreground">
+        {logs.length === 0 ? (
+          <li className="list-none text-navy-foreground/80">Events will appear here.</li>
+        ) : (
+          logs.map((item) => (
+            <li key={item.id} className="whitespace-pre-wrap">
+              {item.at} {JSON.stringify(item.payload)}
+            </li>
+          ))
+        )}
+      </ol>
     </section>
   );
 }
