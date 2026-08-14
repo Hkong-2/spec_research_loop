@@ -1,15 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useQueryClient } from "@tanstack/react-query";
 import { BadgeCheck, FlaskConical, Library, ListChecks, MessageSquare, Scale } from "lucide-react";
 
-import { API_BASE_URL, getStoredToken, setStoredToken } from "@/lib/api";
-import { useMeApiIdentityMeGet } from "@/lib/api/generated/endpoints";
+import { API_BASE_URL } from "@/lib/api";
+import { useAccount } from "@/features/identity";
 import { LOOP_STAGES } from "@/lib/loop-stages";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const STAGE_ICONS = {
@@ -22,26 +19,7 @@ const STAGE_ICONS = {
 } as const;
 
 export default function HomePage() {
-  const [token, setToken] = useState<string | null>(null);
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    setToken(getStoredToken());
-  }, []);
-
-  const meQuery = useMeApiIdentityMeGet({
-    query: { enabled: Boolean(token), retry: false },
-  });
-
-  const email = meQuery.data?.status === 200 ? meQuery.data.data.email : null;
-  const signedIn = Boolean(email);
-  const status = !token
-    ? "Signed out"
-    : meQuery.isLoading
-      ? "Checking Account…"
-      : email
-        ? "Signed in"
-        : "Signed out (token invalid)";
+  const { signedIn } = useAccount();
 
   return (
     <div>
@@ -62,11 +40,7 @@ export default function HomePage() {
               <Link href="/demo" className={cn(buttonVariants({ size: "lg" }))}>
                 {signedIn ? "Continue Loop Session" : "Start a Loop Session"}
               </Link>
-              {signedIn ? (
-                <Link href="/login" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}>
-                  Account
-                </Link>
-              ) : (
+              {signedIn ? null : (
                 <Link href="/login" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}>
                   Sign in
                 </Link>
@@ -105,6 +79,7 @@ export default function HomePage() {
             Independent judges and a Research Spec you confirm. Export a Spec Artifact when the
             Loop Session is ready — not a promise that a venue will accept the work.
           </p>
+          <p className="mt-4 text-xs text-muted-foreground">API base: {API_BASE_URL}</p>
         </div>
       </section>
     </div>

@@ -1,24 +1,17 @@
 "use client";
 
 import { SseDemoPanel } from "@/features/idea";
-import { getStoredToken } from "@/lib/api";
+import { useAccount } from "@/features/identity";
 import { LoopSessionShell } from "@/components/loop-session-shell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export default function DemoPage() {
-  const [ready, setReady] = useState(false);
-  const [authed, setAuthed] = useState(false);
+  const { ready, signedIn, hasToken, isLoading } = useAccount();
 
-  useEffect(() => {
-    setAuthed(Boolean(getStoredToken()));
-    setReady(true);
-  }, []);
-
-  if (!ready) {
+  if (!ready || (hasToken && isLoading)) {
     return (
       <p className="px-6 py-8 text-muted-foreground" aria-live="polite">
         Loading Loop Session…
@@ -26,7 +19,7 @@ export default function DemoPage() {
     );
   }
 
-  if (!authed) {
+  if (!signedIn) {
     return (
       <div className="mx-auto max-w-lg px-6 py-10">
         <Card>
