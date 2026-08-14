@@ -1,0 +1,129 @@
+---
+title: "Research Workflow"
+config:
+    theme: "default"
+    layout: "dagre"
+---
+flowchart TD
+
+    %% Các node chính
+    Start@{ shape: sm-circ, label: "Small start" }
+
+    IdeaInput[User nhập ý tưởng]
+
+    subgraph Idea [Idea Workflow]
+        subgraph Grilling [1. Grilling Session]
+            G1[a. Diễn giải] --> G2[b. Đặt câu hỏi] --> G3[c. User trả lời] --> G1
+        end
+        
+        Grilling --> I1[2. Phân rã ý tưởng] --> I2{3. User xác nhận ý tưởng} -- Chỉnh sửa --> Grilling
+    end
+
+    subgraph Research [Research Workflow]
+        R1[1. User cung cấp keywords/sources/research direction]
+        
+        subgraph Citation [2. Nghiên cứu các công trình liên quan]
+            C1[a. Tìm kiếm]
+            C2[b. Đọc và phân tích]
+            C3[c. Tạo bảng Related Works]
+            C4[d. Verify các công trình]
+            
+            C1 --> C2 --> C3 --> C4 --> C1
+        end
+
+        R2[3. Đề xuất research gap]
+        R3{4. User xác nhận research gap}
+
+        R1 --> Citation --> R2 --> R3 -- Chỉnh sửa --> R1
+    end
+
+    subgraph SpecConstruction [Spec Construction Workflow]
+        S1[Contribution]
+        S2[Claims]
+        S3[Evidence]
+        S4[Experiment Plan]
+        S5[Check Feasibility]
+
+        S1 --> S2 --> S3 --> S4 --> S5
+    end
+
+    SpecDraft["Spec Draft v(n)"]
+
+    ContextBuilder{Context Builder}
+
+    subgraph Context_Payloads [Dữ liệu động được nhúng vào Prompt]
+        GapContext[Gap<br/>+ Problem<br/>+ Related Work<br/>+ Relevant Evidence]
+        ContributionContext[Contribution<br/>+ Gap<br/>+ Related Work<br/>+ Relevant Evidence<br/>]
+        EvidenceContext["Claims<br/>+ Citations<br/>+ Retrieved Passages<br/>+ Source Metadata<br/>"]
+        ExperimentContext["Claims<br/>+ Proposed Approach<br/>+ Experiment Plan<br/>+ Baselines<br/>+ Metrics<br/>+ Dataset<br/>+ Compute Constraints"]
+        ConferenceContext["Spec Draft<br/>+ Gap<br/>+ Contribution<br/>+ Claims<br/>+ Evidence Summary<br/>+ Experiment Plan<br/>+ Risks & Limitations"]
+    end
+
+    subgraph Judgement [Judgement Workflow]
+        GapJudge[Gap Judge]
+        ContributionJudge[Contribution Judge]
+        EvidenceJudge[Evidence Judge]
+        ExperimentJudge[Experiment Judge]
+        ConferenceJudge[Conference Judge]
+        J1{Aggregator\nTổng hợp Issues, Feedbacks<br/> và Triage}
+        J2[User đưa ra điều chỉnh scopes hoặc phê duyệt]
+
+        GapJudge & ContributionJudge & EvidenceJudge & ExperimentJudge & ConferenceJudge --> J1 --> J2
+    end
+
+    subgraph Publication [Publication Workflow]
+        P1[User chỉnh sửa Spec]
+        P2[Xuất Final Spec]
+    end
+
+
+    Stop@{ shape: framed-circle, label: "Stop" }
+
+    %% ==========================================
+    %% Liên kết main workflow
+    %% ==========================================
+    Start --> IdeaInput --> Idea
+
+    I2 -- Xác nhận --> Research
+
+    R3 -- Xác nhận --> SpecConstruction
+
+    SpecConstruction --> SpecDraft --> ContextBuilder --> GapContext & ContributionContext & EvidenceContext & ExperimentContext & ConferenceContext
+
+    GapContext --> GapJudge
+    ContributionContext --> ContributionJudge
+    EvidenceContext --> EvidenceJudge
+    ExperimentContext --> ExperimentJudge
+    ConferenceContext --> ConferenceJudge
+
+    J2 --> P1 --> P2 --> Stop
+
+    %% ==========================================
+    %% Đổ màu nền cho các artifact
+    %% ==========================================
+    classDef userNode fill:#ffe0b2,stroke:#fb8c00,stroke-width:2px;
+    classDef workflowNode fill:#e3f2fd,stroke:#1e88e5,stroke-width:2px;
+    classDef artifactNode fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px;
+    classDef contextNode fill:#ffffff,stroke:#fbc02d,stroke-width:2px,stroke-dasharray: 5 5;
+    classDef judgeNode fill:#fff9c4,stroke:#fbc02d,stroke-width:2px;
+    classDef controlNode fill:#ffcdd2,stroke:#e53935,stroke-width:2px;
+    classDef finalNode fill:#c8e6c9,stroke:#2e7d32,stroke-width:3px;
+    classDef startStop fill:#eeeeee,stroke:#9e9e9e,stroke-width:2px;
+
+    class Start,Stop startStop;
+    class IdeaInput,G3,I2,R1,R3,J2,P1 userNode;
+    class G1,G2,I1,C1,C2,C3,C4,R2,S1,S2,S3,S4,S5 workflowNode;
+    class SpecDraft artifactNode;
+    class GapContext,ContributionContext,EvidenceContext,ExperimentContext,ConferenceContext contextNode;
+    class GapJudge,ContributionJudge,EvidenceJudge,ExperimentJudge,ConferenceJudge judgeNode;
+    class P2 finalNode;
+    class J1,ContextBuilder controlNode;
+
+    %% ==========================================
+    %% Đổ màu nền cho các workflow
+    %% ==========================================
+    style Grilling fill:#ffffff,stroke:#e0e0e0,stroke-width:1px
+    style Citation fill:#ffffff,stroke:#b2ebf2,stroke-width:1px
+    style Context_Payloads fill:#eceff1,stroke:#90a4ae,stroke-width:2px,stroke-dasharray: 5 5
+    style Judgement fill:#fffde7,stroke:#fff176,stroke-width:2px,stroke-dasharray: 5 5
+    style Publication fill:#e8f5e9,stroke:#81c784,stroke-width:2px,stroke-dasharray: 5 5
