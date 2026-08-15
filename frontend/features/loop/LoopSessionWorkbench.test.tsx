@@ -16,11 +16,13 @@ import type { SaveStatus } from "./mutation-queue";
 
 const replace = vi.fn();
 const getHook = vi.fn();
+const decisionsHook = vi.fn();
 const prepareHook = vi.fn();
 const patchHook = vi.fn();
 const confirmHook = vi.fn();
 const setQueryData = vi.fn();
 const getQueryData = vi.fn();
+const invalidateQueries = vi.fn();
 const queueFlush = vi.fn(async () => undefined);
 const queueEnqueue = vi.fn(async (mutation: () => Promise<unknown>) => mutation());
 const saveStatus = { current: "idle" as SaveStatus };
@@ -36,7 +38,7 @@ vi.mock("@tanstack/react-query", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@tanstack/react-query")>();
   return {
     ...actual,
-    useQueryClient: () => ({ setQueryData, getQueryData }),
+    useQueryClient: () => ({ setQueryData, getQueryData, invalidateQueries }),
   };
 });
 
@@ -69,7 +71,13 @@ vi.mock("./loop-session-save", () => ({
 
 vi.mock("@/lib/api/generated/endpoints", () => ({
   getGetSessionApiLoopSessionsSessionIdGetQueryKey: (id: string) => [`/sessions/${id}`],
+  getListDecisionsApiLoopSessionsSessionIdDecisionsGetQueryKey: (id: string) => [
+    `/api/loop/sessions/${id}/decisions`,
+  ],
+  getListSessionsApiLoopSessionsGetQueryKey: () => ["/api/loop/sessions"],
   useGetSessionApiLoopSessionsSessionIdGet: (...args: unknown[]) => getHook(...args),
+  useListDecisionsApiLoopSessionsSessionIdDecisionsGet: (...args: unknown[]) =>
+    decisionsHook(...args),
   useRecomputePrepareApiLoopSessionsSessionIdRecomputePreparePost: (...args: unknown[]) =>
     prepareHook(...args),
   usePatchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatch: (...args: unknown[]) =>
@@ -108,11 +116,13 @@ describe("LoopSessionWorkbench", () => {
   beforeEach(() => {
     replace.mockReset();
     getHook.mockReset();
+    decisionsHook.mockReset();
     prepareHook.mockReset();
     patchHook.mockReset();
     confirmHook.mockReset();
     setQueryData.mockReset();
     getQueryData.mockReset();
+    invalidateQueries.mockReset();
     queueFlush.mockReset();
     queueEnqueue.mockReset();
     queueFlush.mockResolvedValue(undefined);
@@ -121,6 +131,12 @@ describe("LoopSessionWorkbench", () => {
     search = new URLSearchParams();
     getHook.mockReturnValue({
       data: { status: 200, data: session() },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    decisionsHook.mockReturnValue({
+      data: { status: 200, data: [] },
       isLoading: false,
       isError: false,
       refetch: vi.fn(),
@@ -841,5 +857,275 @@ describe("LoopSessionWorkbench", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("version conflict");
     expect(screen.getByText("Working Draft: Idea interpretation")).toBeInTheDocument();
     expect(setQueryData).not.toHaveBeenCalled();
+  });
+
+  it("shows empty Decision history and Produced Spec Version states", () => {
+    render(<LoopSessionWorkbench sessionId="session-1" />);
+
+    const history = screen.getByRole("region", { name: "Decision history" });
+    expect(history).toHaveTextContent("Decision history");
+    expect(history).toHaveTextContent("No Decisions");
+    expect(history).toHaveTextContent(
+      "Decision history does not include snapshot content, version diff, or revert",
+    );
+    expect(screen.queryByRole("button", { name: /revert/i })).not.toBeInTheDocument();
+
+    const spec = screen.getByRole("region", { name: "Produced Spec Version" });
+    expect(spec).toHaveTextContent("Produced Spec Version");
+    expect(spec).toHaveTextContent("No Produced Spec Version");
+    expect(spec).not.toHaveTextContent("latest spec");
+    expect(spec).not.toHaveTextContent("Draft Research Spec");
+    expect(spec).not.toHaveTextContent("Final Spec");
+  });
+
+  it("shows Decision kind, Workflow Node, timestamp, and Stage Revision id", () => {
+    decisionsHook.mockReturnValue({
+      data: {
+        status: 200,
+        data: [
+          {
+            id: "decision-1",
+            kind: "confirm",
+            node: WorkflowNode.idea_interpretation,
+            stage_revision_id: "revision-abc",
+            created_at: "2026-08-16T10:00:00Z",
+          },
+        ],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<LoopSessionWorkbench sessionId="session-1" />);
+    const history = screen.getByRole("region", { name: "Decision history" });
+
+    expect(history).toHaveTextContent("confirm");
+    expect(history).toHaveTextContent("Idea interpretation");
+    expect(history).toHaveTextContent("Aug 16, 2026, 10:00 AM UTC");
+    expect(history).toHaveTextContent("revision-abc");
+    expect(history).not.toHaveTextContent("No Decisions");
+    expect(screen.queryByRole("button", { name: /diff|revert|snapshot/i })).not.toBeInTheDocument();
+  });
+
+  it("renders a Produced Spec Version read-only in Loop Stage order", () => {
+    getHook.mockReturnValue({
+      data: {
+        status: 200,
+        data: session({
+          produced_spec_version: {
+            id: "spec-valid",
+            created_at: "2026-08-16T12:00:00Z",
+            document: {
+              nodes: {
+                contribution: {
+                  narrative: { text: "A fused kernel scheduler" },
+                  card_snapshot: [
+                    {
+                      id: "card-1",
+                      kind: CardKind.contribution,
+                      body: { text: "Schedule overlapping copies" },
+                    },
+                  ],
+                },
+                idea_interpretation: {
+                  narrative: { text: "Latency in GPU kernels" },
+                  card_snapshot: [],
+                },
+              },
+            },
+          },
+          valid_spec_version_id: "spec-valid",
+        }),
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<LoopSessionWorkbench sessionId="session-1" />);
+    const spec = screen.getByRole("region", { name: "Produced Spec Version" });
+    const text = spec.textContent ?? "";
+
+    expect(spec).toHaveTextContent("Produced Spec Version");
+    expect(spec).toHaveTextContent("Valid Spec Version");
+    expect(spec).not.toHaveTextContent("Stale");
+    expect(spec).toHaveTextContent("Grilling");
+    expect(spec).toHaveTextContent("Latency in GPU kernels");
+    expect(spec).toHaveTextContent("Contribution");
+    expect(spec).toHaveTextContent("A fused kernel scheduler");
+    expect(spec).toHaveTextContent("Schedule overlapping copies");
+    expect(text.indexOf("Grilling")).toBeGreaterThan(-1);
+    expect(text.indexOf("Grilling")).toBeLessThan(text.indexOf("Contribution"));
+    expect(spec).not.toHaveTextContent("latest spec");
+    expect(spec).not.toHaveTextContent("Draft Research Spec");
+    expect(spec).not.toHaveTextContent("Final Spec");
+    expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  });
+
+  it("keeps unknown Produced Spec Version fields visible as JSON", () => {
+    getHook.mockReturnValue({
+      data: {
+        status: 200,
+        data: session({
+          produced_spec_version: {
+            id: "spec-valid",
+            created_at: "2026-08-16T12:00:00Z",
+            document: {
+              assembler: "v2",
+              nodes: {
+                idea_interpretation: {
+                  narrative: { text: "Known idea", schema: "keep-me" },
+                  card_snapshot: [
+                    {
+                      id: "card-1",
+                      kind: CardKind.problem,
+                      body: { text: "Bandwidth", extra: 3 },
+                    },
+                  ],
+                  future_field: { score: 9 },
+                },
+              },
+            },
+          },
+          valid_spec_version_id: "spec-valid",
+        }),
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<LoopSessionWorkbench sessionId="session-1" />);
+    const spec = screen.getByRole("region", { name: "Produced Spec Version" });
+
+    expect(spec).toHaveTextContent("Known idea");
+    expect(spec).toHaveTextContent("Bandwidth");
+    expect(spec).toHaveTextContent('"schema": "keep-me"');
+    expect(spec).toHaveTextContent('"extra": 3');
+    expect(spec).toHaveTextContent('"score": 9');
+    expect(spec).toHaveTextContent('"assembler": "v2"');
+  });
+
+  it("marks a Produced Spec Version Stale when it is not the Valid Spec Version", () => {
+    getHook.mockReturnValue({
+      data: {
+        status: 200,
+        data: session({
+          produced_spec_version: {
+            id: "spec-old",
+            created_at: "2026-08-16T12:00:00Z",
+            document: {
+              nodes: {
+                idea_interpretation: {
+                  narrative: { text: "Earlier understanding" },
+                  card_snapshot: [],
+                },
+              },
+            },
+          },
+          valid_spec_version_id: null,
+        }),
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<LoopSessionWorkbench sessionId="session-1" />);
+    const spec = screen.getByRole("region", { name: "Produced Spec Version" });
+
+    expect(spec).toHaveTextContent("Stale");
+    expect(spec).toHaveTextContent("Produced Spec Version");
+    expect(spec).toHaveTextContent("Valid Spec Version");
+    expect(spec).toHaveTextContent("Earlier understanding");
+  });
+
+  it("keeps Readiness as Not evaluated when every Workflow Node is current", () => {
+    search = new URLSearchParams(`stage=${LoopStage.readiness}`);
+    const current = Object.fromEntries(
+      Object.values(WorkflowNode).map((node) => [node, NodeHeadStatus.current]),
+    ) as Partial<Record<WorkflowNode, NodeHeadStatus>>;
+    getHook.mockReturnValue({
+      data: {
+        status: 200,
+        data: session({
+          working_draft_node: WorkflowNode.feasibility,
+          node_heads: heads(current),
+        }),
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+
+    render(<LoopSessionWorkbench sessionId="session-1" />);
+    const overview = screen.getByRole("region", { name: "Readiness overview" });
+    const nav = screen.getByRole("navigation", { name: "Loop Stages" });
+    const readiness = within(nav).getByRole("link", { name: /Readiness/ });
+
+    expect(overview).toHaveTextContent("Not evaluated");
+    expect(overview).not.toHaveTextContent("%");
+    expect(overview).not.toHaveTextContent("Complete");
+    expect(readiness).toHaveTextContent("Not evaluated");
+    expect(readiness).not.toHaveTextContent("Complete");
+  });
+
+  it("refreshes Decisions, Produced Spec Version, and dashboard queries after Confirm", async () => {
+    search = new URLSearchParams(`stage=${LoopStage.grilling}`);
+    getHook.mockReturnValue({
+      data: {
+        status: 200,
+        data: session({
+          version: 3,
+          working_draft_narrative: { text: "GPU kernel latency" },
+        }),
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    const confirmed = session({
+      version: 4,
+      working_draft_node: WorkflowNode.idea_decomposition,
+      working_draft_narrative: {},
+      node_heads: heads({
+        [WorkflowNode.idea_interpretation]: NodeHeadStatus.current,
+      }),
+      produced_spec_version: {
+        id: "spec-new",
+        created_at: "2026-08-16T13:00:00Z",
+        document: {
+          nodes: {
+            idea_interpretation: {
+              narrative: { text: "Confirmed interpretation" },
+              card_snapshot: [],
+            },
+          },
+        },
+      },
+      valid_spec_version_id: "spec-new",
+    });
+    const mutateAsync = vi.fn().mockResolvedValue({ status: 200, data: confirmed });
+    confirmHook.mockReturnValue({ mutateAsync, error: null });
+
+    render(<LoopSessionWorkbench sessionId="session-1" />);
+    expect(screen.getByRole("region", { name: "Produced Spec Version" })).toHaveTextContent(
+      "No Produced Spec Version",
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(screen.getByRole("region", { name: "Produced Spec Version" })).toHaveTextContent(
+      "Confirmed interpretation",
+    );
+    expect(screen.getByRole("region", { name: "Produced Spec Version" })).toHaveTextContent(
+      "Valid Spec Version",
+    );
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["/api/loop/sessions/session-1/decisions"],
+    });
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: ["/api/loop/sessions"],
+    });
   });
 });

@@ -10,8 +10,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { getApiErrorMessage } from "@/lib/api/config";
 import {
   getGetSessionApiLoopSessionsSessionIdGetQueryKey,
+  getListDecisionsApiLoopSessionsSessionIdDecisionsGetQueryKey,
+  getListSessionsApiLoopSessionsGetQueryKey,
   useConfirmApiLoopSessionsSessionIdConfirmPost,
   useGetSessionApiLoopSessionsSessionIdGet,
+  useListDecisionsApiLoopSessionsSessionIdDecisionsGet,
   usePatchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatch,
   useRecomputePrepareApiLoopSessionsSessionIdRecomputePreparePost,
 } from "@/lib/api/generated/endpoints";
@@ -32,7 +35,9 @@ import {
   resolveSelectedStage,
   stageForWorkflowNode,
 } from "./catalog";
+import { DecisionHistory } from "./DecisionHistory";
 import { LoopSessionTitleEditor } from "./LoopSessionTitleEditor";
+import { ProducedSpecVersionView } from "./ProducedSpecVersionView";
 import { WorkingDraftCardCanvas } from "./WorkingDraftCardCanvas";
 import { WorkingDraftNarrativeEditor } from "./WorkingDraftNarrativeEditor";
 import { LoopSessionSaveProvider, useLoopSessionSave } from "./loop-session-save";
@@ -121,6 +126,7 @@ function LoopSessionWorkbenchView({ sessionId }: { sessionId: string }) {
   const queryClient = useQueryClient();
   const { queue, status } = useLoopSessionSave();
   const sessionQuery = useGetSessionApiLoopSessionsSessionIdGet(sessionId);
+  const decisionsQuery = useListDecisionsApiLoopSessionsSessionIdDecisionsGet(sessionId);
   const prepareMutation = useRecomputePrepareApiLoopSessionsSessionIdRecomputePreparePost();
   const patchWorkingDraft = usePatchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatch();
   const confirmMutation = useConfirmApiLoopSessionsSessionIdConfirmPost();
@@ -209,6 +215,12 @@ function LoopSessionWorkbenchView({ sessionId }: { sessionId: string }) {
       const response = await queue.enqueue(() => mutate(expectedVersion()));
       if (response.status === 200) {
         queryClient.setQueryData(sessionKey, response);
+        await queryClient.invalidateQueries({
+          queryKey: getListDecisionsApiLoopSessionsSessionIdDecisionsGetQueryKey(sessionId),
+        });
+        await queryClient.invalidateQueries({
+          queryKey: getListSessionsApiLoopSessionsGetQueryKey(),
+        });
         const next = response.data as LoopSessionResponse;
         setAppliedSession(next);
         setTransitionError(null);
@@ -419,6 +431,15 @@ function LoopSessionWorkbenchView({ sessionId }: { sessionId: string }) {
             </CardContent>
           </Card>
         </section>
+        <DecisionHistory
+          decisions={
+            decisionsQuery.data?.status === 200 ? decisionsQuery.data.data : []
+          }
+        />
+        <ProducedSpecVersionView
+          produced={session.produced_spec_version}
+          validSpecVersionId={session.valid_spec_version_id}
+        />
       </div>
     </div>
   );
