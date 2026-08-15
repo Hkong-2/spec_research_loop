@@ -1547,6 +1547,11 @@ export type confirmApiLoopSessionsSessionIdConfirmPostResponse200 = {
   status: 200
 }
 
+export type confirmApiLoopSessionsSessionIdConfirmPostResponse409 = {
+  data: OperationalError
+  status: 409
+}
+
 export type confirmApiLoopSessionsSessionIdConfirmPostResponse422 = {
   data: HTTPValidationError
   status: 422
@@ -1555,7 +1560,7 @@ export type confirmApiLoopSessionsSessionIdConfirmPostResponse422 = {
 export type confirmApiLoopSessionsSessionIdConfirmPostResponseSuccess = (confirmApiLoopSessionsSessionIdConfirmPostResponse200) & {
   headers: Headers;
 };
-export type confirmApiLoopSessionsSessionIdConfirmPostResponseError = (confirmApiLoopSessionsSessionIdConfirmPostResponse422) & {
+export type confirmApiLoopSessionsSessionIdConfirmPostResponseError = (confirmApiLoopSessionsSessionIdConfirmPostResponse409 | confirmApiLoopSessionsSessionIdConfirmPostResponse422) & {
   headers: Headers;
 };
 
@@ -1588,7 +1593,7 @@ export const confirmApiLoopSessionsSessionIdConfirmPost = async (sessionId: stri
 
 
 
-export const getConfirmApiLoopSessionsSessionIdConfirmPostMutationOptions = <TError = ErrorType<HTTPValidationError>,
+export const getConfirmApiLoopSessionsSessionIdConfirmPostMutationOptions = <TError = ErrorType<OperationalError | HTTPValidationError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmApiLoopSessionsSessionIdConfirmPost>>, TError,{sessionId: string;data: BodyType<ConfirmRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof confirmApiLoopSessionsSessionIdConfirmPost>>, TError,{sessionId: string;data: BodyType<ConfirmRequest>}, TContext> => {
 
@@ -1617,12 +1622,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type ConfirmApiLoopSessionsSessionIdConfirmPostMutationResult = NonNullable<Awaited<ReturnType<typeof confirmApiLoopSessionsSessionIdConfirmPost>>>
     export type ConfirmApiLoopSessionsSessionIdConfirmPostMutationBody = BodyType<ConfirmRequest>
-    export type ConfirmApiLoopSessionsSessionIdConfirmPostMutationError = ErrorType<HTTPValidationError>
+    export type ConfirmApiLoopSessionsSessionIdConfirmPostMutationError = ErrorType<OperationalError | HTTPValidationError>
 
     /**
  * @summary Confirm
  */
-export const useConfirmApiLoopSessionsSessionIdConfirmPost = <TError = ErrorType<HTTPValidationError>,
+export const useConfirmApiLoopSessionsSessionIdConfirmPost = <TError = ErrorType<OperationalError | HTTPValidationError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmApiLoopSessionsSessionIdConfirmPost>>, TError,{sessionId: string;data: BodyType<ConfirmRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof confirmApiLoopSessionsSessionIdConfirmPost>>,

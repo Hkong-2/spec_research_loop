@@ -26,6 +26,7 @@ class WorkingDraftPatchRequest(BaseModel):
 
 class ConfirmRequest(BaseModel):
     node: WorkflowNode
+    expected_version: int = Field(ge=1)
 
 
 class PrepareRequest(BaseModel):

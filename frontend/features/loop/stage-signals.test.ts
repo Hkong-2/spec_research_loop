@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { LoopStage, NodeHeadStatus, WorkflowNode } from "@/lib/api/generated/model";
+import { CardKind, LoopStage, NodeHeadStatus, WorkflowNode } from "@/lib/api/generated/model";
 import type { NodeHeadResponse } from "@/lib/api/generated/model";
 
-import { deriveStageSignals, incompleteUpstreamNodes } from "./stage-signals";
+import {
+  deriveStageSignals,
+  hasConfirmableWorkingDraft,
+  incompleteUpstreamNodes,
+  staleInvalidationStages,
+} from "./stage-signals";
 
 function heads(
   overrides: Partial<Record<WorkflowNode, NodeHeadStatus>> = {},
@@ -193,5 +198,74 @@ describe("Loop Stage signals", () => {
         }),
       }),
     ).toEqual([WorkflowNode.idea_decomposition]);
+  });
+});
+
+describe("Confirm signals", () => {
+  it("warns only when reconfirming a current Workflow Node with current descendants", () => {
+    expect(
+      staleInvalidationStages({
+        node: WorkflowNode.idea_interpretation,
+        nodeHeads: heads(),
+      }),
+    ).toEqual([]);
+    expect(
+      staleInvalidationStages({
+        node: WorkflowNode.idea_interpretation,
+        nodeHeads: heads({
+          [WorkflowNode.idea_interpretation]: NodeHeadStatus.current,
+        }),
+      }),
+    ).toEqual([]);
+    expect(
+      staleInvalidationStages({
+        node: WorkflowNode.idea_interpretation,
+        nodeHeads: heads({
+          [WorkflowNode.idea_interpretation]: NodeHeadStatus.current,
+          [WorkflowNode.idea_decomposition]: NodeHeadStatus.current,
+          [WorkflowNode.research_inputs]: NodeHeadStatus.current,
+        }),
+      }),
+    ).toEqual([LoopStage.grilling, LoopStage.related_work]);
+  });
+
+  it("treats nonblank narrative text or a nonblank owned Card as confirmable", () => {
+    expect(
+      hasConfirmableWorkingDraft({
+        working_draft_node: WorkflowNode.idea_interpretation,
+        working_draft_narrative: { text: "   " },
+        cards: [
+          {
+            id: "card-1",
+            kind: CardKind.problem,
+            body: { text: "owned by decomposition" },
+            created_at: "2026-08-15T10:00:00Z",
+            updated_at: "2026-08-15T10:00:00Z",
+          },
+        ],
+      }),
+    ).toBe(false);
+    expect(
+      hasConfirmableWorkingDraft({
+        working_draft_node: WorkflowNode.idea_interpretation,
+        working_draft_narrative: { text: "Latency in GPU kernels" },
+        cards: [],
+      }),
+    ).toBe(true);
+    expect(
+      hasConfirmableWorkingDraft({
+        working_draft_node: WorkflowNode.idea_decomposition,
+        working_draft_narrative: {},
+        cards: [
+          {
+            id: "card-1",
+            kind: CardKind.problem,
+            body: { text: "Memory bandwidth" },
+            created_at: "2026-08-15T10:00:00Z",
+            updated_at: "2026-08-15T10:00:00Z",
+          },
+        ],
+      }),
+    ).toBe(true);
   });
 });

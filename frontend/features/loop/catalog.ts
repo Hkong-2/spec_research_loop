@@ -205,6 +205,20 @@ export function ancestors(node: WorkflowNode): Set<WorkflowNode> {
   return found;
 }
 
+export function descendants(node: WorkflowNode): Set<WorkflowNode> {
+  const found = new Set<WorkflowNode>();
+  const stack = [...INVALIDATION_CHILDREN[node]];
+  while (stack.length > 0) {
+    const child = stack.pop();
+    if (!child || found.has(child)) {
+      continue;
+    }
+    found.add(child);
+    stack.push(...INVALIDATION_CHILDREN[child]);
+  }
+  return found;
+}
+
 export function upstreamOfStage(stage: LoopStage): Set<WorkflowNode> {
   const stageNodes = new Set<WorkflowNode>(catalogStage(stage).nodes);
   const upstream = new Set<WorkflowNode>();

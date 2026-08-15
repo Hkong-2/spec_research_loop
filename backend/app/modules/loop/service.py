@@ -275,20 +275,30 @@ class LoopService:
         session_id: UUID,
         account_id: UUID,
         node: WorkflowNode,
+        expected_version: int,
     ) -> LoopSessionResponse:
         session = await self._load_session(session_id, account_id)
         if session.working_draft_node != node.value:
-            raise HTTPException(
+            raise OperationalErrorException(
                 status_code=status.HTTP_409_CONFLICT,
+                code="invalid_working_draft_target",
                 detail="confirm must target the Working Draft Workflow Node",
             )
         heads = {head.node_enum(): head for head in session.node_heads}
         for ancestor in ancestors(node):
             if heads[ancestor].status_enum() != NodeHeadStatus.CURRENT:
-                raise HTTPException(
+                raise OperationalErrorException(
                     status_code=status.HTTP_409_CONFLICT,
+                    code="upstream_not_current",
                     detail="Upstream Node Heads must be current",
                 )
+
+        await self._increment_session_version(
+            session,
+            session_id=session_id,
+            account_id=account_id,
+            expected_version=expected_version,
+        )
 
         owned = set(owned_kinds(node))
         slice_cards = [card for card in session.cards if card.kind_enum() in owned]
@@ -305,9 +315,8 @@ class LoopService:
             if current_rev is not None and current_rev.freeze_hash == digest:
                 if head.status_enum() is NodeHeadStatus.STALE:
                     head.status = NodeHeadStatus.CURRENT.value
-                    await self._db.commit()
-                    return await self.get_session(session_id=session_id, account_id=account_id)
-                return await self._to_response(session)
+                await self._db.commit()
+                return await self.get_session(session_id=session_id, account_id=account_id)
 
         next_n = 1 + max(
             (rev.revision_n for rev in session.stage_revisions if rev.node == node.value),

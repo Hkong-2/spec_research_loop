@@ -5,6 +5,7 @@ import { CardKind, LoopStage, WorkflowNode } from "@/lib/api/generated/model";
 import {
   LOOP_STAGE_CATALOG,
   ancestors,
+  descendants,
   ownedCardKinds,
   resolveSelectedStage,
   stageForWorkflowNode,
@@ -62,6 +63,13 @@ describe("Loop Stage catalog", () => {
     expect(upstreamOfStage(LoopStage.related_work)).toEqual(
       new Set([WorkflowNode.idea_interpretation, WorkflowNode.idea_decomposition]),
     );
+  });
+
+  it("walks current descendants from the invalidation catalog", () => {
+    expect(descendants(WorkflowNode.idea_interpretation)).toEqual(
+      new Set(Object.values(WorkflowNode).filter((node) => node !== WorkflowNode.idea_interpretation)),
+    );
+    expect(descendants(WorkflowNode.aggregator)).toEqual(new Set());
   });
 
   it("maps every generated Card kind to one confirming Workflow Node", () => {

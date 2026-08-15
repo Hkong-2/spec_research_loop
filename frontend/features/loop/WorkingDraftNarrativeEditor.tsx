@@ -70,7 +70,7 @@ export function WorkingDraftNarrativeEditor({ sessionId }: { sessionId: string }
 
   useEffect(() => {
     return () => {
-      void queue.flush();
+      void queue.flush().catch(() => undefined);
     };
   }, [queue]);
 

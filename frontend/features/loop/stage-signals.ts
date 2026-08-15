@@ -1,7 +1,14 @@
 import { LoopStage, NodeHeadStatus, WorkflowNode } from "@/lib/api/generated/model";
-import type { NodeHeadResponse } from "@/lib/api/generated/model";
+import type { LoopSessionResponse, NodeHeadResponse } from "@/lib/api/generated/model";
 
-import { catalogStage, stageForWorkflowNode, upstreamOfStage } from "./catalog";
+import {
+  LOOP_STAGE_CATALOG,
+  catalogStage,
+  descendants,
+  ownedCardKinds,
+  stageForWorkflowNode,
+  upstreamOfStage,
+} from "./catalog";
 
 export type CompletionSignal = "complete" | "needs_work" | "stale" | "not_evaluated";
 
@@ -79,4 +86,42 @@ export function deriveStageSignals({
     return { completion: "complete", editing, available };
   }
   return { completion: "needs_work", editing, available };
+}
+
+export function staleInvalidationStages({
+  node,
+  nodeHeads,
+}: {
+  node: WorkflowNode;
+  nodeHeads: NodeHeadResponse[];
+}): LoopStage[] {
+  const statusByNode = new Map(nodeHeads.map((head) => [head.node, head.status]));
+  if (statusByNode.get(node) !== NodeHeadStatus.current) {
+    return [];
+  }
+  const stages = new Set<LoopStage>();
+  for (const child of descendants(node)) {
+    if (statusByNode.get(child) === NodeHeadStatus.current) {
+      stages.add(stageForWorkflowNode(child));
+    }
+  }
+  return LOOP_STAGE_CATALOG.map((stage) => stage.id).filter((id) => stages.has(id));
+}
+
+function fieldText(value: unknown): string {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return "";
+  }
+  const text = (value as Record<string, unknown>).text;
+  return typeof text === "string" ? text.trim() : "";
+}
+
+export function hasConfirmableWorkingDraft(
+  session: Pick<LoopSessionResponse, "working_draft_node" | "working_draft_narrative" | "cards">,
+): boolean {
+  if (fieldText(session.working_draft_narrative)) {
+    return true;
+  }
+  const owned = new Set(ownedCardKinds(session.working_draft_node));
+  return session.cards.some((card) => owned.has(card.kind) && fieldText(card.body));
 }

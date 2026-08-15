@@ -20,7 +20,7 @@ async def test_project_context_uses_working_draft_and_empty_projectors(
     session_id = UUID(created["id"])
     me = await client.get("/api/identity/me")
     account_id = UUID(me.json()["id"])
-    await _confirm(client, str(session_id), "idea_interpretation")
+    await _confirm(client, str(session_id), "idea_interpretation", created["version"])
 
     factory = get_session_factory()
     async with factory() as db:

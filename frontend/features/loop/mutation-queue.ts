@@ -23,6 +23,8 @@ export class SerializedMutationQueue {
   private suspended = false;
   private timer: ReturnType<typeof setTimeout> | null = null;
   private pending: ScheduledMutation | null = null;
+  private lastStatus: SaveStatus = "idle";
+  private lastError: unknown = null;
 
   constructor(private readonly options: QueueOptions) {}
 
@@ -35,17 +37,19 @@ export class SerializedMutationQueue {
       if (this.suspended) {
         throw new QueueSuspendedError();
       }
-      this.options.onStatus("saving");
+      this.setStatus("saving");
       try {
         const value = await mutation();
-        this.options.onStatus("saved");
+        this.setStatus("saved");
+        this.lastError = null;
         return value;
       } catch (error) {
+        this.lastError = error;
         if (this.options.isConflict(error)) {
           this.suspended = true;
-          this.options.onStatus("conflict");
+          this.setStatus("conflict");
         } else {
-          this.options.onStatus("failed");
+          this.setStatus("failed");
         }
         throw error;
       }
@@ -85,8 +89,17 @@ export class SerializedMutationQueue {
   }
 
   async flush(): Promise<void> {
+    const hadWork = this.pending !== null || this.timer !== null;
     await this.flushScheduled();
     await this.tail;
+    if (hadWork && (this.lastStatus === "failed" || this.lastStatus === "conflict")) {
+      throw this.lastError ?? new Error("Save failed");
+    }
+  }
+
+  private setStatus(status: SaveStatus): void {
+    this.lastStatus = status;
+    this.options.onStatus(status);
   }
 
   private async flushScheduled(): Promise<void> {
@@ -108,5 +121,7 @@ export class SerializedMutationQueue {
 
   resumeAfterConflict(): void {
     this.suspended = false;
+    this.lastStatus = "idle";
+    this.lastError = null;
   }
 }

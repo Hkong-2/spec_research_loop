@@ -8,4 +8,6 @@ import type { WorkflowNode } from './workflowNode';
 
 export interface ConfirmRequest {
   node: WorkflowNode;
+  /** @minimum 1 */
+  expected_version: number;
 }

@@ -97,6 +97,21 @@ describe("SerializedMutationQueue", () => {
     vi.useRealTimers();
   });
 
+  it("propagates a flushed save failure so Confirm can abort", async () => {
+    const queue = new SerializedMutationQueue({
+      isConflict: () => false,
+      onStatus: () => undefined,
+    });
+
+    const scheduled = queue.schedule(async () => {
+      throw new Error("offline");
+    }, 400);
+    const flushed = queue.flush();
+
+    await expect(scheduled).rejects.toThrow("offline");
+    await expect(flushed).rejects.toThrow("offline");
+  });
+
   it("does not run a scheduled mutation after a conflict until explicit resolution", async () => {
     vi.useFakeTimers();
     const conflict = new Error("conflict");

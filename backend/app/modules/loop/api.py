@@ -163,14 +163,23 @@ async def list_decisions(
     return await _service(db).list_decisions(session_id=session_id, account_id=account.id)
 
 
-@router.post("/sessions/{session_id}/confirm", response_model=LoopSessionResponse)
+@router.post(
+    "/sessions/{session_id}/confirm",
+    response_model=LoopSessionResponse,
+    responses={409: {"model": OperationalError}},
+)
 async def confirm(
     session_id: UUID,
     body: ConfirmRequest,
     account: Annotated[Account, Depends(get_current_account)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> LoopSessionResponse:
-    return await _service(db).confirm(session_id=session_id, account_id=account.id, node=body.node)
+    return await _service(db).confirm(
+        session_id=session_id,
+        account_id=account.id,
+        node=body.node,
+        expected_version=body.expected_version,
+    )
 
 
 @router.post(

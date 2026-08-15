@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { getApiErrorMessage } from "@/lib/api/config";
 import {
   getGetSessionApiLoopSessionsSessionIdGetQueryKey,
+  useConfirmApiLoopSessionsSessionIdConfirmPost,
   useGetSessionApiLoopSessionsSessionIdGet,
   usePatchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatch,
   useRecomputePrepareApiLoopSessionsSessionIdRecomputePreparePost,
@@ -40,7 +41,9 @@ import { LOOP_STAGE_ICONS } from "./stage-icons";
 import {
   deriveStageActions,
   deriveStageSignals,
+  hasConfirmableWorkingDraft,
   incompleteUpstreamNodes,
+  staleInvalidationStages,
   type CompletionSignal,
 } from "./stage-signals";
 
@@ -87,9 +90,21 @@ function transitionMessage(error: OperationalError): string {
       return "Upstream Workflow Nodes are not current. Your current Working Draft was kept.";
     case "stage_already_current":
       return "Every Workflow Node in this Loop Stage is already current. Your current Working Draft was kept.";
+    case "invalid_working_draft_target":
+      return "Confirm must target the current Working Draft Workflow Node. Your current Working Draft was kept.";
     default:
       return error.detail;
   }
+}
+
+function formatStageList(names: string[]): string {
+  if (names.length === 1) {
+    return names[0];
+  }
+  if (names.length === 2) {
+    return `${names[0]} and ${names[1]}`;
+  }
+  return `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
 }
 
 export function LoopSessionWorkbench({ sessionId }: { sessionId: string }) {
@@ -104,12 +119,14 @@ function LoopSessionWorkbenchView({ sessionId }: { sessionId: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
-  const { queue } = useLoopSessionSave();
+  const { queue, status } = useLoopSessionSave();
   const sessionQuery = useGetSessionApiLoopSessionsSessionIdGet(sessionId);
   const prepareMutation = useRecomputePrepareApiLoopSessionsSessionIdRecomputePreparePost();
   const patchWorkingDraft = usePatchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatch();
+  const confirmMutation = useConfirmApiLoopSessionsSessionIdConfirmPost();
   const [appliedSession, setAppliedSession] = useState<LoopSessionResponse | null>(null);
   const [transitionError, setTransitionError] = useState<OperationalError | null>(null);
+  const [offerContinue, setOfferContinue] = useState(false);
 
   const queriedSession = sessionQuery.data?.status === 200 ? sessionQuery.data.data : null;
   const session = newerSession(queriedSession, appliedSession);
@@ -122,6 +139,10 @@ function LoopSessionWorkbenchView({ sessionId }: { sessionId: string }) {
     if (searchParams.get("stage") === selectedStage) return;
     router.replace(`/sessions/${sessionId}?stage=${selectedStage}`, { scroll: false });
   }, [router, searchParams, selectedStage, session, sessionId]);
+
+  useEffect(() => {
+    setOfferContinue(false);
+  }, [selectedStage]);
 
   if (sessionQuery.isLoading) {
     return <p className="text-muted-foreground">Loading Loop Session…</p>;
@@ -151,7 +172,20 @@ function LoopSessionWorkbenchView({ sessionId }: { sessionId: string }) {
     stage: selectedStage,
     nodeHeads: session.node_heads,
   });
+  const workingDraftNode = session.working_draft_node;
   const sessionKey = getGetSessionApiLoopSessionsSessionIdGetQueryKey(sessionId);
+  const editingWorkingDraft = stageForWorkflowNode(workingDraftNode) === selectedStage;
+  const warningStages = editingWorkingDraft
+    ? staleInvalidationStages({
+        node: workingDraftNode,
+        nodeHeads: session.node_heads,
+      })
+    : [];
+  const confirmDisabled =
+    status === "saving" ||
+    status === "failed" ||
+    status === "conflict" ||
+    !hasConfirmableWorkingDraft(session);
 
   function expectedVersion(): number {
     const cached = queryClient.getQueryData(sessionKey) as
@@ -165,19 +199,26 @@ function LoopSessionWorkbenchView({ sessionId }: { sessionId: string }) {
 
   async function applyTransition(
     mutate: (expectedVersion: number) => Promise<{ status: number; data: unknown }>,
-  ) {
-    await queue.flush();
+  ): Promise<LoopSessionResponse | null> {
+    try {
+      await queue.flush();
+    } catch {
+      return null;
+    }
     try {
       const response = await queue.enqueue(() => mutate(expectedVersion()));
       if (response.status === 200) {
         queryClient.setQueryData(sessionKey, response);
-        setAppliedSession(response.data as LoopSessionResponse);
+        const next = response.data as LoopSessionResponse;
+        setAppliedSession(next);
         setTransitionError(null);
+        return next;
       }
     } catch (error) {
       const typed = operationalError(error);
       setTransitionError(typed ?? { code: "", detail: getApiErrorMessage(error) });
     }
+    return null;
   }
 
   function startOrRecompute() {
@@ -198,6 +239,28 @@ function LoopSessionWorkbenchView({ sessionId }: { sessionId: string }) {
         data: { node, expected_version: version },
       }),
     );
+  }
+
+  function confirmWorkingDraft() {
+    void applyTransition((version) =>
+      confirmMutation.mutateAsync({
+        sessionId,
+        data: { node: workingDraftNode, expected_version: version },
+      }),
+    ).then((next) => {
+      if (!next) return;
+      const stage = stageForWorkflowNode(next.working_draft_node);
+      const nextActions = deriveStageActions({
+        stage,
+        nodeHeads: next.node_heads,
+      });
+      setOfferContinue(nextActions.canStart || nextActions.canRecompute);
+    });
+  }
+
+  function continueWork() {
+    setOfferContinue(false);
+    startOrRecompute();
   }
 
   return (
@@ -255,10 +318,21 @@ function LoopSessionWorkbenchView({ sessionId }: { sessionId: string }) {
           </Link>
         </p>
         <LoopSessionTitleEditor sessionId={sessionId} />
-        {stageForWorkflowNode(session.working_draft_node) === selectedStage ? (
+        {editingWorkingDraft ? (
           <>
             <WorkingDraftNarrativeEditor sessionId={sessionId} />
             <WorkingDraftCardCanvas sessionId={sessionId} />
+            <div className="grid gap-3">
+              {warningStages.length > 0 ? (
+                <p role="note" className="text-sm text-pending">
+                  {formatStageList(warningStages.map((stage) => catalogStage(stage).name))} may
+                  become Stale. Invalidation depends on whether this confirmation changes content.
+                </p>
+              ) : null}
+              <Button disabled={confirmDisabled} onClick={confirmWorkingDraft}>
+                Confirm
+              </Button>
+            </div>
           </>
         ) : null}
         <section aria-label={`${selected.name} overview`}>
@@ -291,13 +365,16 @@ function LoopSessionWorkbenchView({ sessionId }: { sessionId: string }) {
                   </ul>
                 </div>
               ) : null}
-              {actions.canStart || actions.canRecompute || actions.editableNodes.length > 0 ? (
+              {actions.canStart || actions.canRecompute || actions.editableNodes.length > 0 || offerContinue ? (
                 <div className="grid gap-3">
                   {actions.canStart ? (
                     <Button onClick={startOrRecompute}>Start</Button>
                   ) : null}
                   {actions.canRecompute ? (
                     <Button onClick={startOrRecompute}>Recompute</Button>
+                  ) : null}
+                  {offerContinue ? (
+                    <Button onClick={continueWork}>Continue</Button>
                   ) : null}
                   {actions.editableNodes.length > 0 ? (
                     <div className="grid gap-2">
