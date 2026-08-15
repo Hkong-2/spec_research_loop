@@ -10,4 +10,6 @@ import type { CreateCardRequestBody } from './createCardRequestBody';
 export interface CreateCardRequest {
   kind: CardKind;
   body?: CreateCardRequestBody;
+  /** @minimum 1 */
+  expected_version: number;
 }

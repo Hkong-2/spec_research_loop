@@ -67,6 +67,20 @@ async def _prepare(client: AsyncClient, session_id: str, stage: str) -> dict:
     return response.json()
 
 
+async def _create_card(
+    client: AsyncClient,
+    session_id: str,
+    *,
+    kind: str,
+    body: dict,
+    expected_version: int,
+) -> Response:
+    return await client.post(
+        f"/api/loop/sessions/{session_id}/cards",
+        json={"kind": kind, "body": body, "expected_version": expected_version},
+    )
+
+
 async def _patch_working_draft(
     client: AsyncClient,
     session_id: str,
@@ -411,23 +425,147 @@ async def test_card_write_requires_owning_working_draft(client: AsyncClient) -> 
     await _auth_client(client)
     created = await _create_session(client)
     session_id = created["id"]
-    denied = await client.post(
-        f"/api/loop/sessions/{session_id}/cards",
-        json={"kind": "problem", "body": {"text": "too soon"}},
+    denied = await _create_card(
+        client,
+        session_id,
+        kind="problem",
+        body={"text": "too soon"},
+        expected_version=created["version"],
     )
     assert denied.status_code == 409
+    assert denied.json() == {
+        "code": "card_owner_mismatch",
+        "detail": "Card writes require the Working Draft to be the owning Workflow Node",
+        "current_version": None,
+    }
     await _confirm(client, session_id, "idea_interpretation")
-    created_card = await client.post(
-        f"/api/loop/sessions/{session_id}/cards",
-        json={"kind": "problem", "body": {"text": "LLM latency"}},
+    created_card = await _create_card(
+        client,
+        session_id,
+        kind="problem",
+        body={"text": "LLM latency"},
+        expected_version=created["version"],
     )
     assert created_card.status_code == 201, created_card.text
     assert created_card.json()["kind"] == "problem"
-    constraint = await client.post(
-        f"/api/loop/sessions/{session_id}/cards",
-        json={"kind": "constraint", "body": {"text": "one 16GB GPU"}},
+    constraint = await _create_card(
+        client,
+        session_id,
+        kind="constraint",
+        body={"text": "one 16GB GPU"},
+        expected_version=created_card.json()["version"],
     )
     assert constraint.status_code == 201
+
+
+@pytest.mark.asyncio
+async def test_create_card_requires_expected_version(client: AsyncClient) -> None:
+    await _auth_client(client)
+    created = await _create_session(client)
+    session_id = created["id"]
+    await _confirm(client, session_id, "idea_interpretation")
+
+    response = await client.post(
+        f"/api/loop/sessions/{session_id}/cards",
+        json={"kind": "problem", "body": {"text": "LLM latency"}},
+    )
+
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_create_and_patch_card_increment_session_version(client: AsyncClient) -> None:
+    await _auth_client(client)
+    created = await _create_session(client)
+    session_id = created["id"]
+    await _confirm(client, session_id, "idea_interpretation")
+
+    created_card = await _create_card(
+        client,
+        session_id,
+        kind="problem",
+        body={"schema": "keep-me", "text": "LLM latency"},
+        expected_version=created["version"],
+    )
+    assert created_card.status_code == 201, created_card.text
+    payload = created_card.json()
+    assert payload["kind"] == "problem"
+    assert payload["body"] == {"schema": "keep-me", "text": "LLM latency"}
+    assert payload["version"] == created["version"] + 1
+
+    patched = await client.patch(
+        f"/api/loop/sessions/{session_id}/cards/{payload['id']}",
+        json={
+            "expected_version": payload["version"],
+            "body": {"schema": "keep-me", "extra": 7, "text": "GPU kernels"},
+        },
+    )
+    assert patched.status_code == 200, patched.text
+    assert patched.json()["version"] == created["version"] + 2
+    assert patched.json()["body"] == {"schema": "keep-me", "extra": 7, "text": "GPU kernels"}
+
+    fetched = await client.get(f"/api/loop/sessions/{session_id}")
+    assert fetched.json()["version"] == created["version"] + 2
+    assert fetched.json()["cards"][0]["body"] == {
+        "schema": "keep-me",
+        "extra": 7,
+        "text": "GPU kernels",
+    }
+
+
+@pytest.mark.asyncio
+async def test_stale_card_write_makes_no_partial_change(client: AsyncClient) -> None:
+    await _auth_client(client)
+    created = await _create_session(client)
+    session_id = created["id"]
+    await _confirm(client, session_id, "idea_interpretation")
+
+    accepted = await _create_card(
+        client,
+        session_id,
+        kind="problem",
+        body={"text": "Accepted problem"},
+        expected_version=created["version"],
+    )
+    assert accepted.status_code == 201, accepted.text
+    card_id = accepted.json()["id"]
+
+    stale_create = await _create_card(
+        client,
+        session_id,
+        kind="constraint",
+        body={"text": "stale constraint"},
+        expected_version=created["version"],
+    )
+    assert stale_create.status_code == 409
+    assert stale_create.json() == {
+        "code": "version_conflict",
+        "detail": "Loop Session was changed by another request",
+        "current_version": created["version"] + 1,
+    }
+
+    stale_patch = await client.patch(
+        f"/api/loop/sessions/{session_id}/cards/{card_id}",
+        json={"expected_version": created["version"], "body": {"text": "Stale overwrite"}},
+    )
+    assert stale_patch.status_code == 409
+    assert stale_patch.json() == {
+        "code": "version_conflict",
+        "detail": "Loop Session was changed by another request",
+        "current_version": created["version"] + 1,
+    }
+
+    fetched = await client.get(f"/api/loop/sessions/{session_id}")
+    assert fetched.json()["version"] == created["version"] + 1
+    assert fetched.json()["cards"] == [
+        {
+            "id": card_id,
+            "kind": "problem",
+            "body": {"text": "Accepted problem"},
+            "created_at": accepted.json()["created_at"],
+            "updated_at": accepted.json()["updated_at"],
+        }
+    ]
 
 
 @pytest.mark.asyncio
@@ -436,16 +574,19 @@ async def test_changed_interpretation_marks_decomposition_stale(client: AsyncCli
     created = await _create_session(client)
     session_id = created["id"]
     await _confirm(client, session_id, "idea_interpretation")
-    card = await client.post(
-        f"/api/loop/sessions/{session_id}/cards",
-        json={"kind": "problem", "body": {"text": "accuracy"}},
+    card = await _create_card(
+        client,
+        session_id,
+        kind="problem",
+        body={"text": "accuracy"},
+        expected_version=created["version"],
     )
     assert card.status_code == 201
     await _confirm(client, session_id, "idea_decomposition")
     await _patch_working_draft(
         client,
         session_id,
-        expected_version=created["version"],
+        expected_version=card.json()["version"],
         node="idea_interpretation",
         narrative={"understanding": "latency"},
     )
@@ -460,15 +601,19 @@ async def test_prepare_grilling_lands_on_stale_decomposition(client: AsyncClient
     created = await _create_session(client)
     session_id = created["id"]
     await _confirm(client, session_id, "idea_interpretation")
-    await client.post(
-        f"/api/loop/sessions/{session_id}/cards",
-        json={"kind": "problem", "body": {"text": "accuracy"}},
+    card = await _create_card(
+        client,
+        session_id,
+        kind="problem",
+        body={"text": "accuracy"},
+        expected_version=created["version"],
     )
+    assert card.status_code == 201
     await _confirm(client, session_id, "idea_decomposition")
     await _patch_working_draft(
         client,
         session_id,
-        expected_version=created["version"],
+        expected_version=card.json()["version"],
         node="idea_interpretation",
         narrative={"understanding": "latency"},
     )

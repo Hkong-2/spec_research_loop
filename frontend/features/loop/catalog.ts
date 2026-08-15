@@ -1,4 +1,4 @@
-import { LoopStage, WorkflowNode } from "@/lib/api/generated/model";
+import { CardKind, LoopStage, WorkflowNode } from "@/lib/api/generated/model";
 
 export const LOOP_STAGE_CATALOG = [
   {
@@ -147,6 +147,32 @@ export function stageForWorkflowNode(node: WorkflowNode): LoopStage {
     throw new Error(`Workflow Node ${node} is missing from the Loop Stage catalog`);
   }
   return stage.id;
+}
+
+export const CARD_KIND_OWNER: Record<CardKind, WorkflowNode> = {
+  [CardKind.problem]: WorkflowNode.idea_decomposition,
+  [CardKind.research_question]: WorkflowNode.idea_decomposition,
+  [CardKind.constraint]: WorkflowNode.idea_decomposition,
+  [CardKind.open_question]: WorkflowNode.idea_decomposition,
+  [CardKind.gap]: WorkflowNode.gap,
+  [CardKind.contribution]: WorkflowNode.contribution,
+  [CardKind.claim]: WorkflowNode.claims,
+  [CardKind.evidence]: WorkflowNode.evidence,
+};
+
+export const CARD_KIND_LABELS: Record<CardKind, string> = {
+  [CardKind.problem]: "Problem",
+  [CardKind.research_question]: "Research question",
+  [CardKind.gap]: "Gap",
+  [CardKind.contribution]: "Contribution",
+  [CardKind.claim]: "Claim",
+  [CardKind.evidence]: "Evidence",
+  [CardKind.constraint]: "Constraint",
+  [CardKind.open_question]: "Open question",
+};
+
+export function ownedCardKinds(node: WorkflowNode): CardKind[] {
+  return (Object.values(CardKind) as CardKind[]).filter((kind) => CARD_KIND_OWNER[kind] === node);
 }
 
 export function resolveSelectedStage(

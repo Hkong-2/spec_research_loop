@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { LoopStage, WorkflowNode } from "@/lib/api/generated/model";
+import { CardKind, LoopStage, WorkflowNode } from "@/lib/api/generated/model";
 
 import {
   LOOP_STAGE_CATALOG,
   ancestors,
+  ownedCardKinds,
   resolveSelectedStage,
   stageForWorkflowNode,
   upstreamOfStage,
@@ -61,5 +62,20 @@ describe("Loop Stage catalog", () => {
     expect(upstreamOfStage(LoopStage.related_work)).toEqual(
       new Set([WorkflowNode.idea_interpretation, WorkflowNode.idea_decomposition]),
     );
+  });
+
+  it("maps every generated Card kind to one confirming Workflow Node", () => {
+    expect(ownedCardKinds(WorkflowNode.idea_interpretation)).toEqual([]);
+    expect(ownedCardKinds(WorkflowNode.idea_decomposition)).toEqual([
+      CardKind.problem,
+      CardKind.research_question,
+      CardKind.constraint,
+      CardKind.open_question,
+    ]);
+    expect(ownedCardKinds(WorkflowNode.gap)).toEqual([CardKind.gap]);
+    expect(ownedCardKinds(WorkflowNode.contribution)).toEqual([CardKind.contribution]);
+    expect(ownedCardKinds(WorkflowNode.claims)).toEqual([CardKind.claim]);
+    expect(ownedCardKinds(WorkflowNode.evidence)).toEqual([CardKind.evidence]);
+    expect(ownedCardKinds(WorkflowNode.experiment_plan)).toEqual([]);
   });
 });

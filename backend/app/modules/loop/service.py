@@ -38,6 +38,7 @@ from app.modules.loop.models import (
     StageRevision,
 )
 from app.modules.loop.schemas import (
+    CardMutationResponse,
     CardResponse,
     DecisionResponse,
     LoopSessionResponse,
@@ -222,14 +223,21 @@ class LoopService:
         account_id: UUID,
         kind: CardKind,
         body: dict[str, Any],
-    ) -> CardResponse:
+        expected_version: int,
+    ) -> CardMutationResponse:
         session = await self._load_session(session_id, account_id)
         self._assert_card_owner(session, kind)
+        next_version = await self._increment_session_version(
+            session,
+            session_id=session_id,
+            account_id=account_id,
+            expected_version=expected_version,
+        )
         card = Card(session_id=session.id, kind=kind.value, body=body)
         self._db.add(card)
         await self._db.commit()
         await self._db.refresh(card)
-        return CardResponse.model_validate(card)
+        return self._to_mutation_response(card, next_version)
 
     async def patch_card(
         self,
@@ -238,16 +246,23 @@ class LoopService:
         account_id: UUID,
         card_id: UUID,
         body: dict[str, Any],
-    ) -> CardResponse:
+        expected_version: int,
+    ) -> CardMutationResponse:
         session = await self._load_session(session_id, account_id)
         card = next((item for item in session.cards if item.id == card_id), None)
         if card is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Card not found")
         self._assert_card_owner(session, card.kind_enum())
+        next_version = await self._increment_session_version(
+            session,
+            session_id=session_id,
+            account_id=account_id,
+            expected_version=expected_version,
+        )
         card.body = body
         await self._db.commit()
         await self._db.refresh(card)
-        return CardResponse.model_validate(card)
+        return self._to_mutation_response(card, next_version)
 
     async def list_decisions(self, *, session_id: UUID, account_id: UUID) -> list[DecisionResponse]:
         session = await self._load_session(session_id, account_id)
@@ -429,10 +444,55 @@ class LoopService:
     def _assert_card_owner(self, session: LoopSession, kind: CardKind) -> None:
         owner = CARD_KIND_OWNER[kind]
         if session.working_draft_node != owner.value:
-            raise HTTPException(
+            raise OperationalErrorException(
                 status_code=status.HTTP_409_CONFLICT,
+                code="card_owner_mismatch",
                 detail="Card writes require the Working Draft to be the owning Workflow Node",
             )
+
+    async def _increment_session_version(
+        self,
+        session: LoopSession,
+        *,
+        session_id: UUID,
+        account_id: UUID,
+        expected_version: int,
+    ) -> int:
+        updated = await self._db.execute(
+            update(LoopSession)
+            .where(
+                LoopSession.id == session_id,
+                LoopSession.account_id == account_id,
+                LoopSession.version == expected_version,
+            )
+            .values(
+                version=LoopSession.version + 1,
+                updated_at=func.now(),
+            )
+            .returning(LoopSession.version)
+            .execution_options(synchronize_session=False)
+        )
+        updated_row = updated.one_or_none()
+        if updated_row is None:
+            await self._db.refresh(session, attribute_names=["version"])
+            raise OperationalErrorException(
+                status_code=status.HTTP_409_CONFLICT,
+                code="version_conflict",
+                detail="Loop Session was changed by another request",
+                current_version=session.version,
+            )
+        attributes.set_committed_value(session, "version", updated_row.version)
+        return updated_row.version
+
+    def _to_mutation_response(self, card: Card, version: int) -> CardMutationResponse:
+        return CardMutationResponse(
+            id=card.id,
+            kind=card.kind_enum(),
+            body=card.body,
+            created_at=card.created_at,
+            updated_at=card.updated_at,
+            version=version,
+        )
 
     async def _load_session(self, session_id: UUID, account_id: UUID) -> LoopSession:
         session = await self._db.scalar(

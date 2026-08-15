@@ -18,6 +18,7 @@ import {
   stageForWorkflowNode,
 } from "./catalog";
 import { LoopSessionTitleEditor } from "./LoopSessionTitleEditor";
+import { WorkingDraftCardCanvas } from "./WorkingDraftCardCanvas";
 import { WorkingDraftNarrativeEditor } from "./WorkingDraftNarrativeEditor";
 import { LoopSessionSaveProvider } from "./loop-session-save";
 import { LOOP_STAGE_ICONS } from "./stage-icons";
@@ -150,7 +151,10 @@ export function LoopSessionWorkbench({ sessionId }: { sessionId: string }) {
         </p>
         <LoopSessionTitleEditor sessionId={sessionId} />
         {stageForWorkflowNode(session.working_draft_node) === selectedStage ? (
-          <WorkingDraftNarrativeEditor sessionId={sessionId} />
+          <>
+            <WorkingDraftNarrativeEditor sessionId={sessionId} />
+            <WorkingDraftCardCanvas sessionId={sessionId} />
+          </>
         ) : null}
         <section aria-label={`${selected.name} overview`}>
           <Card>

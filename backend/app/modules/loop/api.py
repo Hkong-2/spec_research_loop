@@ -11,6 +11,7 @@ from app.db.session import get_db
 from app.modules.identity.deps import get_current_account
 from app.modules.identity.models import Account
 from app.modules.loop.schemas import (
+    CardMutationResponse,
     CardResponse,
     ConfirmRequest,
     CreateCardRequest,
@@ -111,34 +112,45 @@ async def list_cards(
     return await _service(db).list_cards(session_id=session_id, account_id=account.id)
 
 
-@router.post("/sessions/{session_id}/cards", response_model=CardResponse, status_code=201)
+@router.post(
+    "/sessions/{session_id}/cards",
+    response_model=CardMutationResponse,
+    status_code=201,
+    responses={409: {"model": OperationalError}},
+)
 async def create_card(
     session_id: UUID,
     body: CreateCardRequest,
     account: Annotated[Account, Depends(get_current_account)],
     db: Annotated[AsyncSession, Depends(get_db)],
-) -> CardResponse:
+) -> CardMutationResponse:
     return await _service(db).create_card(
         session_id=session_id,
         account_id=account.id,
         kind=body.kind,
         body=body.body,
+        expected_version=body.expected_version,
     )
 
 
-@router.patch("/sessions/{session_id}/cards/{card_id}", response_model=CardResponse)
+@router.patch(
+    "/sessions/{session_id}/cards/{card_id}",
+    response_model=CardMutationResponse,
+    responses={409: {"model": OperationalError}},
+)
 async def patch_card(
     session_id: UUID,
     card_id: UUID,
     body: PatchCardRequest,
     account: Annotated[Account, Depends(get_current_account)],
     db: Annotated[AsyncSession, Depends(get_db)],
-) -> CardResponse:
+) -> CardMutationResponse:
     return await _service(db).patch_card(
         session_id=session_id,
         account_id=account.id,
         card_id=card_id,
         body=body.body,
+        expected_version=body.expected_version,
     )
 
 

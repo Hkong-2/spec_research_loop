@@ -35,10 +35,12 @@ class PrepareRequest(BaseModel):
 class CreateCardRequest(BaseModel):
     kind: CardKind
     body: dict[str, Any] = Field(default_factory=dict)
+    expected_version: int = Field(ge=1)
 
 
 class PatchCardRequest(BaseModel):
     body: dict[str, Any]
+    expected_version: int = Field(ge=1)
 
 
 class NodeHeadResponse(BaseModel):
@@ -57,6 +59,10 @@ class CardResponse(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class CardMutationResponse(CardResponse):
+    version: int
 
 
 class SpecVersionResponse(BaseModel):

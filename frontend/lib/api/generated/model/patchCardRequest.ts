@@ -8,4 +8,6 @@ import type { PatchCardRequestBody } from './patchCardRequestBody';
 
 export interface PatchCardRequest {
   body: PatchCardRequestBody;
+  /** @minimum 1 */
+  expected_version: number;
 }

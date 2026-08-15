@@ -25,6 +25,7 @@ import type {
 
 import type {
   AccountResponse,
+  CardMutationResponse,
   CardResponse,
   ConfirmRequest,
   CreateCardRequest,
@@ -1228,8 +1229,13 @@ export function useListCardsApiLoopSessionsSessionIdCardsGet<TData = Awaited<Ret
 
 
 export type createCardApiLoopSessionsSessionIdCardsPostResponse201 = {
-  data: CardResponse
+  data: CardMutationResponse
   status: 201
+}
+
+export type createCardApiLoopSessionsSessionIdCardsPostResponse409 = {
+  data: OperationalError
+  status: 409
 }
 
 export type createCardApiLoopSessionsSessionIdCardsPostResponse422 = {
@@ -1240,7 +1246,7 @@ export type createCardApiLoopSessionsSessionIdCardsPostResponse422 = {
 export type createCardApiLoopSessionsSessionIdCardsPostResponseSuccess = (createCardApiLoopSessionsSessionIdCardsPostResponse201) & {
   headers: Headers;
 };
-export type createCardApiLoopSessionsSessionIdCardsPostResponseError = (createCardApiLoopSessionsSessionIdCardsPostResponse422) & {
+export type createCardApiLoopSessionsSessionIdCardsPostResponseError = (createCardApiLoopSessionsSessionIdCardsPostResponse409 | createCardApiLoopSessionsSessionIdCardsPostResponse422) & {
   headers: Headers;
 };
 
@@ -1273,7 +1279,7 @@ export const createCardApiLoopSessionsSessionIdCardsPost = async (sessionId: str
 
 
 
-export const getCreateCardApiLoopSessionsSessionIdCardsPostMutationOptions = <TError = ErrorType<HTTPValidationError>,
+export const getCreateCardApiLoopSessionsSessionIdCardsPostMutationOptions = <TError = ErrorType<OperationalError | HTTPValidationError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCardApiLoopSessionsSessionIdCardsPost>>, TError,{sessionId: string;data: BodyType<CreateCardRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof createCardApiLoopSessionsSessionIdCardsPost>>, TError,{sessionId: string;data: BodyType<CreateCardRequest>}, TContext> => {
 
@@ -1302,12 +1308,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type CreateCardApiLoopSessionsSessionIdCardsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createCardApiLoopSessionsSessionIdCardsPost>>>
     export type CreateCardApiLoopSessionsSessionIdCardsPostMutationBody = BodyType<CreateCardRequest>
-    export type CreateCardApiLoopSessionsSessionIdCardsPostMutationError = ErrorType<HTTPValidationError>
+    export type CreateCardApiLoopSessionsSessionIdCardsPostMutationError = ErrorType<OperationalError | HTTPValidationError>
 
     /**
  * @summary Create Card
  */
-export const useCreateCardApiLoopSessionsSessionIdCardsPost = <TError = ErrorType<HTTPValidationError>,
+export const useCreateCardApiLoopSessionsSessionIdCardsPost = <TError = ErrorType<OperationalError | HTTPValidationError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCardApiLoopSessionsSessionIdCardsPost>>, TError,{sessionId: string;data: BodyType<CreateCardRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof createCardApiLoopSessionsSessionIdCardsPost>>,
@@ -1319,8 +1325,13 @@ export const useCreateCardApiLoopSessionsSessionIdCardsPost = <TError = ErrorTyp
     }
 
 export type patchCardApiLoopSessionsSessionIdCardsCardIdPatchResponse200 = {
-  data: CardResponse
+  data: CardMutationResponse
   status: 200
+}
+
+export type patchCardApiLoopSessionsSessionIdCardsCardIdPatchResponse409 = {
+  data: OperationalError
+  status: 409
 }
 
 export type patchCardApiLoopSessionsSessionIdCardsCardIdPatchResponse422 = {
@@ -1331,7 +1342,7 @@ export type patchCardApiLoopSessionsSessionIdCardsCardIdPatchResponse422 = {
 export type patchCardApiLoopSessionsSessionIdCardsCardIdPatchResponseSuccess = (patchCardApiLoopSessionsSessionIdCardsCardIdPatchResponse200) & {
   headers: Headers;
 };
-export type patchCardApiLoopSessionsSessionIdCardsCardIdPatchResponseError = (patchCardApiLoopSessionsSessionIdCardsCardIdPatchResponse422) & {
+export type patchCardApiLoopSessionsSessionIdCardsCardIdPatchResponseError = (patchCardApiLoopSessionsSessionIdCardsCardIdPatchResponse409 | patchCardApiLoopSessionsSessionIdCardsCardIdPatchResponse422) & {
   headers: Headers;
 };
 
@@ -1366,7 +1377,7 @@ export const patchCardApiLoopSessionsSessionIdCardsCardIdPatch = async (sessionI
 
 
 
-export const getPatchCardApiLoopSessionsSessionIdCardsCardIdPatchMutationOptions = <TError = ErrorType<HTTPValidationError>,
+export const getPatchCardApiLoopSessionsSessionIdCardsCardIdPatchMutationOptions = <TError = ErrorType<OperationalError | HTTPValidationError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchCardApiLoopSessionsSessionIdCardsCardIdPatch>>, TError,{sessionId: string;cardId: string;data: BodyType<PatchCardRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof patchCardApiLoopSessionsSessionIdCardsCardIdPatch>>, TError,{sessionId: string;cardId: string;data: BodyType<PatchCardRequest>}, TContext> => {
 
@@ -1395,12 +1406,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PatchCardApiLoopSessionsSessionIdCardsCardIdPatchMutationResult = NonNullable<Awaited<ReturnType<typeof patchCardApiLoopSessionsSessionIdCardsCardIdPatch>>>
     export type PatchCardApiLoopSessionsSessionIdCardsCardIdPatchMutationBody = BodyType<PatchCardRequest>
-    export type PatchCardApiLoopSessionsSessionIdCardsCardIdPatchMutationError = ErrorType<HTTPValidationError>
+    export type PatchCardApiLoopSessionsSessionIdCardsCardIdPatchMutationError = ErrorType<OperationalError | HTTPValidationError>
 
     /**
  * @summary Patch Card
  */
-export const usePatchCardApiLoopSessionsSessionIdCardsCardIdPatch = <TError = ErrorType<HTTPValidationError>,
+export const usePatchCardApiLoopSessionsSessionIdCardsCardIdPatch = <TError = ErrorType<OperationalError | HTTPValidationError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchCardApiLoopSessionsSessionIdCardsCardIdPatch>>, TError,{sessionId: string;cardId: string;data: BodyType<PatchCardRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof patchCardApiLoopSessionsSessionIdCardsCardIdPatch>>,

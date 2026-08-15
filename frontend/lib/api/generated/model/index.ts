@@ -7,6 +7,8 @@
 
 export * from './accountResponse';
 export * from './cardKind';
+export * from './cardMutationResponse';
+export * from './cardMutationResponseBody';
 export * from './cardResponse';
 export * from './cardResponseBody';
 export * from './confirmRequest';
