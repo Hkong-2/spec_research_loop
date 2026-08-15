@@ -1,0 +1,97 @@
+"""Loop HTTP schemas."""
+
+from datetime import datetime
+from typing import Any
+from uuid import UUID
+
+from pydantic import BaseModel, Field
+
+from app.modules.loop.catalog import CardKind, LoopStage, NodeHeadStatus, WorkflowNode
+
+
+class CreateSessionRequest(BaseModel):
+    title: str | None = Field(default=None, max_length=200)
+
+
+class PatchSessionRequest(BaseModel):
+    title: str | None = Field(default=None, max_length=200)
+
+
+class WorkingDraftPatchRequest(BaseModel):
+    node: WorkflowNode | None = None
+    narrative: dict[str, Any] | None = None
+
+
+class ConfirmRequest(BaseModel):
+    node: WorkflowNode
+
+
+class PrepareRequest(BaseModel):
+    stage: LoopStage
+
+
+class CreateCardRequest(BaseModel):
+    kind: CardKind
+    body: dict[str, Any] = Field(default_factory=dict)
+
+
+class PatchCardRequest(BaseModel):
+    body: dict[str, Any]
+
+
+class NodeHeadResponse(BaseModel):
+    node: WorkflowNode
+    status: NodeHeadStatus
+    stage_revision_id: UUID | None
+
+    model_config = {"from_attributes": True}
+
+
+class CardResponse(BaseModel):
+    id: UUID
+    kind: CardKind
+    body: dict[str, Any]
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class SpecVersionResponse(BaseModel):
+    id: UUID
+    document: dict[str, Any]
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class DecisionResponse(BaseModel):
+    id: UUID
+    kind: str
+    node: WorkflowNode | None
+    stage_revision_id: UUID | None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class LoopSessionResponse(BaseModel):
+    id: UUID
+    title: str | None
+    working_draft_node: WorkflowNode
+    working_draft_narrative: dict[str, Any]
+    node_heads: list[NodeHeadResponse]
+    cards: list[CardResponse]
+    produced_spec_version: SpecVersionResponse | None
+    valid_spec_version_id: UUID | None
+    created_at: datetime
+    updated_at: datetime
+
+
+class LoopSessionSummary(BaseModel):
+    id: UUID
+    title: str | None
+    working_draft_node: WorkflowNode
+    created_at: datetime
+
+    model_config = {"from_attributes": True}

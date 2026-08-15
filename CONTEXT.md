@@ -13,8 +13,8 @@ The product and end-to-end workflow that moves an idea through research and judg
 _Avoid_: pipeline (alone), agent swarm, autopilot research
 
 **Loop Session**:
-One run of the SpecResearch Loop for a single research idea; the durable unit a user opens, saves, and resumes.
-_Avoid_: session (alone), project, chat, conversation, thread
+An Account's project: one research idea being clarified into a Research Spec; the durable unit they open, save, and resume. Canonical term is Loop Session; project means the same thing.
+_Avoid_: session (alone), chat, conversation, thread
 
 **Account**:
 A signed-in person who owns Loop Sessions.
@@ -29,7 +29,7 @@ A recorded user choice in a Loop Session (confirm, edit, pick an option, or reve
 _Avoid_: event, log entry, chat message
 
 **Stage Revision**:
-An immutable, user-confirmed snapshot of one workflow node's output.
+An immutable, user-confirmed snapshot of one Workflow Node's output.
 _Avoid_: commit, checkpoint, save (alone)
 
 **Spec Version**:
@@ -45,15 +45,23 @@ The Produced Spec Version when it is not stale; otherwise the Loop Session has n
 _Avoid_: current spec, head
 
 **Working Draft**:
-The session's current editing DAG node plus narrative JSONB. In-progress typed attachments are working rows with no Stage Revision. Navigating away keeps both; confirming a change against the current Stage Revision marks downstream nodes Stale.
+The session's current editing Workflow Node plus narrative JSONB. In-progress typed attachments are working rows with no Stage Revision. Navigating away or reopening a current Workflow Node keeps the last Stage Revision current; only a confirm whose content changed marks descendants Stale.
 _Avoid_: temp, cache, unsaved changes
 
 **Loop Stage**:
-A user-facing unit the user confirms or recomputes: Grilling, Related work, Contribution, Claims/evidence, Experiment planning, Independent judges, Readiness.
+A user-facing group of Workflow Nodes the Account recomputes together: Grilling, Related work, Contribution, Claims/evidence, Experiment planning, Independent judges, Readiness. Confirm is per Workflow Node.
 _Avoid_: step, bước, pipeline stage (when you mean this UI unit)
 
+**Workflow Node**:
+A confirmable unit in a Loop Session's invalidation graph (for example idea interpretation, contribution, or a Judge). A Loop Stage groups one or more Workflow Nodes. Readiness has none. A Spec Version is not a Workflow Node; confirming feasibility mints it.
+_Avoid_: DAG node (in product copy), step, pipeline stage (that is a Loop Stage)
+
+**Node Head**:
+The Loop Session's pointer for one Workflow Node: empty, a current Stage Revision, or a Stale Stage Revision.
+_Avoid_: NodeState, stage status, head (when you mean Valid Spec Version)
+
 **Card**:
-A first-class piece of the idea that keeps the same identity across Loop Stages (problem, research question, gap, contribution, claim, evidence, constraint, open question). Later stages attach research and spec data to it; a Stage Revision freezes the card body at confirm time.
+A first-class piece of the idea that keeps the same identity across Loop Stages (problem, research question, gap, contribution, claim, evidence, constraint, open question). Later stages attach research and spec data to it; a Stage Revision freezes the card body at confirm time. Constraint and open-question Cards are confirmed in Grilling, not in experiment planning.
 _Avoid_: sticky note, field, ticket, citation (citations are not Cards)
 
 **Citation**:
@@ -65,7 +73,7 @@ One Judge's immutable evaluation of a Spec Version.
 _Avoid_: review, score, feedback (when you mean this stored run)
 
 **Stale**:
-A Stage Revision or Spec Version whose upstream inputs have changed. It remains for history and diff; it is not used as input.
+A Stage Revision or Spec Version whose upstream inputs have changed via a confirm with different content. It remains for history and diff; it is not used as input. Opening a Working Draft is not a change.
 _Avoid_: deleted, invalid, outdated (when you mean this state)
 
 **Context Projection**:
