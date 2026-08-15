@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/lib/api/config";
 
 import { LoopSessionTitleEditor } from "./LoopSessionTitleEditor";
+import { LoopSessionSaveProvider } from "./loop-session-save";
 
 const getHook = vi.fn();
 const patchHook = vi.fn();
@@ -65,7 +66,11 @@ describe("LoopSessionTitleEditor", () => {
       });
     patchHook.mockReturnValue({ mutateAsync });
 
-    render(<LoopSessionTitleEditor sessionId="one" />);
+    render(
+      <LoopSessionSaveProvider>
+        <LoopSessionTitleEditor sessionId="one" />
+      </LoopSessionSaveProvider>,
+    );
     const input = screen.getByRole("textbox", { name: "Loop Session title" });
     await userEvent.clear(input);
     await userEvent.type(input, "My title");
@@ -115,7 +120,11 @@ describe("LoopSessionTitleEditor", () => {
       ),
     });
 
-    render(<LoopSessionTitleEditor sessionId="one" />);
+    render(
+      <LoopSessionSaveProvider>
+        <LoopSessionTitleEditor sessionId="one" />
+      </LoopSessionSaveProvider>,
+    );
     const input = screen.getByRole("textbox", { name: "Loop Session title" });
     await userEvent.clear(input);
     await userEvent.type(input, "My local title");
@@ -134,11 +143,19 @@ describe("LoopSessionTitleEditor", () => {
   it("shows loading and failure states", () => {
     getHook.mockReturnValueOnce({ isLoading: true, isError: false });
     patchHook.mockReturnValue({ mutateAsync: vi.fn() });
-    const { rerender } = render(<LoopSessionTitleEditor sessionId="one" />);
+    const { rerender } = render(
+      <LoopSessionSaveProvider>
+        <LoopSessionTitleEditor sessionId="one" />
+      </LoopSessionSaveProvider>,
+    );
     expect(screen.getByText("Loading Loop Session…")).toBeInTheDocument();
 
     getHook.mockReturnValueOnce({ isLoading: false, isError: true, refetch: vi.fn() });
-    rerender(<LoopSessionTitleEditor sessionId="one" />);
+    rerender(
+      <LoopSessionSaveProvider>
+        <LoopSessionTitleEditor sessionId="one" />
+      </LoopSessionSaveProvider>,
+    );
     expect(screen.getByRole("alert")).toHaveTextContent("could not load");
   });
 });

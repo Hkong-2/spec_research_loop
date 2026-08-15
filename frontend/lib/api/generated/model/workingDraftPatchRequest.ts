@@ -10,4 +10,6 @@ import type { WorkingDraftPatchRequestNarrative } from './workingDraftPatchReque
 export interface WorkingDraftPatchRequest {
   node?: WorkflowNode | null;
   narrative?: WorkingDraftPatchRequestNarrative;
+  /** @minimum 1 */
+  expected_version: number;
 }

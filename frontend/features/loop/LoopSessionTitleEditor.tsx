@@ -6,36 +6,23 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ApiError, getApiErrorMessage } from "@/lib/api/config";
+import { getApiErrorMessage } from "@/lib/api/config";
 import {
   getGetSessionApiLoopSessionsSessionIdGetQueryKey,
   getListSessionsApiLoopSessionsGetQueryKey,
   useGetSessionApiLoopSessionsSessionIdGet,
   usePatchSessionApiLoopSessionsSessionIdPatch,
 } from "@/lib/api/generated/endpoints";
-import type { OperationalError } from "@/lib/api/generated/model";
 
-import { SerializedMutationQueue, type SaveStatus } from "./mutation-queue";
+import { useLoopSessionSave } from "./loop-session-save";
+import { type SaveStatus } from "./mutation-queue";
+import { isVersionConflict, operationalError } from "./operational-error";
 
 type Conflict = {
   localTitle: string;
   serverTitle: string | null;
   serverVersion: number;
 };
-
-function operationalError(error: unknown): OperationalError | null {
-  if (!(error instanceof ApiError) || typeof error.data !== "object" || error.data === null) {
-    return null;
-  }
-  if (!("code" in error.data) || typeof error.data.code !== "string") {
-    return null;
-  }
-  return error.data as OperationalError;
-}
-
-function isVersionConflict(error: unknown): boolean {
-  return operationalError(error)?.code === "version_conflict";
-}
 
 const STATUS_LABEL: Record<SaveStatus, string | null> = {
   idle: null,
@@ -49,17 +36,10 @@ export function LoopSessionTitleEditor({ sessionId }: { sessionId: string }) {
   const queryClient = useQueryClient();
   const sessionQuery = useGetSessionApiLoopSessionsSessionIdGet(sessionId);
   const patchTitle = usePatchSessionApiLoopSessionsSessionIdPatch();
+  const { queue, status, setStatus } = useLoopSessionSave();
   const [title, setTitle] = useState("");
   const [dirty, setDirty] = useState(false);
-  const [status, setStatus] = useState<SaveStatus>("idle");
   const [conflict, setConflict] = useState<Conflict | null>(null);
-  const [queue] = useState(
-    () =>
-      new SerializedMutationQueue({
-        isConflict: isVersionConflict,
-        onStatus: setStatus,
-      }),
-  );
 
   const session = sessionQuery.data?.status === 200 ? sessionQuery.data.data : null;
 

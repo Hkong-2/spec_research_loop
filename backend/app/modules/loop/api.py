@@ -82,7 +82,11 @@ async def patch_session(
     )
 
 
-@router.patch("/sessions/{session_id}/working-draft", response_model=LoopSessionResponse)
+@router.patch(
+    "/sessions/{session_id}/working-draft",
+    response_model=LoopSessionResponse,
+    responses={409: {"model": OperationalError}},
+)
 async def patch_working_draft(
     session_id: UUID,
     body: WorkingDraftPatchRequest,
@@ -94,6 +98,7 @@ async def patch_working_draft(
         account_id=account.id,
         node=body.node,
         narrative=body.narrative,
+        expected_version=body.expected_version,
     )
 
 

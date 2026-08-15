@@ -1016,6 +1016,11 @@ export type patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchResponse20
   status: 200
 }
 
+export type patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchResponse409 = {
+  data: OperationalError
+  status: 409
+}
+
 export type patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchResponse422 = {
   data: HTTPValidationError
   status: 422
@@ -1024,7 +1029,7 @@ export type patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchResponse42
 export type patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchResponseSuccess = (patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchResponse200) & {
   headers: Headers;
 };
-export type patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchResponseError = (patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchResponse422) & {
+export type patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchResponseError = (patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchResponse409 | patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchResponse422) & {
   headers: Headers;
 };
 
@@ -1057,7 +1062,7 @@ export const patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatch = async 
 
 
 
-export const getPatchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchMutationOptions = <TError = ErrorType<HTTPValidationError>,
+export const getPatchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchMutationOptions = <TError = ErrorType<OperationalError | HTTPValidationError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatch>>, TError,{sessionId: string;data: BodyType<WorkingDraftPatchRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatch>>, TError,{sessionId: string;data: BodyType<WorkingDraftPatchRequest>}, TContext> => {
 
@@ -1086,12 +1091,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type PatchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchMutationResult = NonNullable<Awaited<ReturnType<typeof patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatch>>>
     export type PatchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchMutationBody = BodyType<WorkingDraftPatchRequest>
-    export type PatchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchMutationError = ErrorType<HTTPValidationError>
+    export type PatchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchMutationError = ErrorType<OperationalError | HTTPValidationError>
 
     /**
  * @summary Patch Working Draft
  */
-export const usePatchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatch = <TError = ErrorType<HTTPValidationError>,
+export const usePatchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatch = <TError = ErrorType<OperationalError | HTTPValidationError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatch>>, TError,{sessionId: string;data: BodyType<WorkingDraftPatchRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatch>>,

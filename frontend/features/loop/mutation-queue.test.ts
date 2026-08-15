@@ -70,4 +70,54 @@ describe("SerializedMutationQueue", () => {
     await expect(queue.enqueue(async () => 4)).resolves.toBe(4);
     expect(statuses).toEqual(["saving", "failed", "saving", "saved"]);
   });
+
+  it("debounces scheduled mutations and flushes the latest one immediately", async () => {
+    vi.useFakeTimers();
+    const calls: string[] = [];
+    const queue = new SerializedMutationQueue({
+      isConflict: () => false,
+      onStatus: () => undefined,
+    });
+
+    const first = queue.schedule(async () => {
+      calls.push("first");
+      return "first";
+    }, 400);
+    const second = queue.schedule(async () => {
+      calls.push("second");
+      return "second";
+    }, 400);
+
+    await vi.advanceTimersByTimeAsync(399);
+    expect(calls).toEqual([]);
+
+    const flushed = queue.flush();
+    await expect(Promise.all([first, second, flushed])).resolves.toEqual(["second", "second", undefined]);
+    expect(calls).toEqual(["second"]);
+    vi.useRealTimers();
+  });
+
+  it("does not run a scheduled mutation after a conflict until explicit resolution", async () => {
+    vi.useFakeTimers();
+    const conflict = new Error("conflict");
+    const queue = new SerializedMutationQueue({
+      isConflict: (error) => error === conflict,
+      onStatus: () => undefined,
+    });
+
+    await expect(queue.enqueue(async () => {
+      throw conflict;
+    })).rejects.toBe(conflict);
+
+    const scheduled = queue.schedule(async () => "later", 400);
+    await expect(scheduled).rejects.toBeInstanceOf(QueueSuspendedError);
+    await vi.advanceTimersByTimeAsync(400);
+    await queue.flush();
+
+    queue.resumeAfterConflict();
+    const resumed = queue.schedule(async () => "ok", 400);
+    await queue.flush();
+    await expect(resumed).resolves.toBe("ok");
+    vi.useRealTimers();
+  });
 });

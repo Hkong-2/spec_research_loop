@@ -143,6 +143,7 @@ class LoopService:
         account_id: UUID,
         node: WorkflowNode | None,
         narrative: dict[str, Any] | None,
+        expected_version: int,
     ) -> LoopSessionResponse:
         if node is None and narrative is None:
             raise HTTPException(
@@ -150,25 +151,65 @@ class LoopService:
                 detail="Provide node and/or narrative",
             )
         session = await self._load_session(session_id, account_id)
+        if session.version != expected_version:
+            raise OperationalErrorException(
+                status_code=status.HTTP_409_CONFLICT,
+                code="version_conflict",
+                detail="Loop Session was changed by another request",
+                current_version=session.version,
+            )
         heads = {head.node_enum(): head for head in session.node_heads}
+        next_node = session.working_draft_node
+        next_narrative = dict(session.working_draft_narrative)
         if node is not None:
-            target = heads[node]
-            if target.status_enum() != NodeHeadStatus.CURRENT:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="Working Draft can only move to a current Workflow Node",
-                )
             for ancestor in ancestors(node):
                 if heads[ancestor].status_enum() != NodeHeadStatus.CURRENT:
-                    raise HTTPException(
+                    raise OperationalErrorException(
                         status_code=status.HTTP_409_CONFLICT,
+                        code="upstream_not_current",
                         detail="Upstream Node Heads must be current",
                     )
-            session.working_draft_node = node.value
+            if heads[node].status_enum() != NodeHeadStatus.CURRENT:
+                raise OperationalErrorException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    code="invalid_working_draft_target",
+                    detail="Working Draft can only move to a current Workflow Node",
+                )
+            next_node = node.value
         if narrative is not None:
-            session.working_draft_narrative = narrative
+            next_narrative = narrative
+        updated = await self._db.execute(
+            update(LoopSession)
+            .where(
+                LoopSession.id == session_id,
+                LoopSession.account_id == account_id,
+                LoopSession.version == expected_version,
+            )
+            .values(
+                working_draft_node=next_node,
+                working_draft_narrative=next_narrative,
+                version=LoopSession.version + 1,
+                updated_at=func.now(),
+            )
+            .returning(LoopSession.version, LoopSession.updated_at)
+            .execution_options(synchronize_session=False)
+        )
+        updated_row = updated.one_or_none()
+        if updated_row is None:
+            await self._db.refresh(session, attribute_names=["version"])
+            raise OperationalErrorException(
+                status_code=status.HTTP_409_CONFLICT,
+                code="version_conflict",
+                detail="Loop Session was changed by another request",
+                current_version=session.version,
+            )
+        attributes.set_committed_value(session, "working_draft_node", next_node)
+        attributes.set_committed_value(session, "working_draft_narrative", next_narrative)
+        attributes.set_committed_value(session, "version", updated_row.version)
+        attributes.set_committed_value(session, "updated_at", updated_row.updated_at)
+        response = await self._to_response(session)
         await self._db.commit()
-        return await self.get_session(session_id=session_id, account_id=account_id)
+        return response
 
     async def list_cards(self, *, session_id: UUID, account_id: UUID) -> list[CardResponse]:
         session = await self._load_session(session_id, account_id)

@@ -3,7 +3,7 @@
 from uuid import uuid4
 
 import pytest
-from httpx import AsyncClient
+from httpx import AsyncClient, Response
 
 from app.modules.loop.catalog import WORKFLOW_NODES
 
@@ -65,6 +65,24 @@ async def _prepare(client: AsyncClient, session_id: str, stage: str) -> dict:
     )
     assert response.status_code == 200, response.text
     return response.json()
+
+
+async def _patch_working_draft(
+    client: AsyncClient,
+    session_id: str,
+    *,
+    expected_version: int | None = None,
+    node: str | None = None,
+    narrative: dict | None = None,
+) -> Response:
+    body: dict = {}
+    if expected_version is not None:
+        body["expected_version"] = expected_version
+    if node is not None:
+        body["node"] = node
+    if narrative is not None:
+        body["narrative"] = narrative
+    return await client.patch(f"/api/loop/sessions/{session_id}/working-draft", json=body)
 
 
 @pytest.mark.asyncio
@@ -190,14 +208,154 @@ async def test_foreign_session_is_not_found(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_cannot_patch_working_draft_onto_empty_node(client: AsyncClient) -> None:
+async def test_patch_working_draft_requires_expected_version(client: AsyncClient) -> None:
     await _auth_client(client)
     created = await _create_session(client)
-    response = await client.patch(
-        f"/api/loop/sessions/{created['id']}/working-draft",
-        json={"node": "idea_decomposition"},
+    response = await _patch_working_draft(
+        client,
+        created["id"],
+        narrative={"text": "GPU kernels"},
+    )
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_patch_working_draft_narrative_increments_version(client: AsyncClient) -> None:
+    await _auth_client(client)
+    created = await _create_session(client)
+    session_id = created["id"]
+
+    response = await _patch_working_draft(
+        client,
+        session_id,
+        expected_version=created["version"],
+        narrative={"text": "GPU kernels", "schema": "keep-me"},
+    )
+
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert payload["version"] == 2
+    assert payload["working_draft_node"] == "idea_interpretation"
+    assert payload["working_draft_narrative"] == {"schema": "keep-me", "text": "GPU kernels"}
+    fetched = await client.get(f"/api/loop/sessions/{session_id}")
+    assert fetched.json()["working_draft_narrative"] == {"schema": "keep-me", "text": "GPU kernels"}
+    assert fetched.json()["version"] == 2
+
+
+@pytest.mark.asyncio
+async def test_stale_working_draft_patch_preserves_server_narrative(client: AsyncClient) -> None:
+    await _auth_client(client)
+    created = await _create_session(client)
+    session_id = created["id"]
+    accepted = await _patch_working_draft(
+        client,
+        session_id,
+        expected_version=created["version"],
+        narrative={"text": "Accepted idea"},
+    )
+    assert accepted.status_code == 200
+    assert accepted.json()["version"] == 2
+
+    stale = await _patch_working_draft(
+        client,
+        session_id,
+        expected_version=created["version"],
+        narrative={"text": "Stale overwrite"},
+    )
+
+    assert stale.status_code == 409
+    assert stale.json() == {
+        "code": "version_conflict",
+        "detail": "Loop Session was changed by another request",
+        "current_version": 2,
+    }
+    fetched = await client.get(f"/api/loop/sessions/{session_id}")
+    assert fetched.json()["working_draft_narrative"] == {"text": "Accepted idea"}
+    assert fetched.json()["version"] == 2
+
+
+@pytest.mark.asyncio
+async def test_stale_working_draft_reopen_is_version_conflict(client: AsyncClient) -> None:
+    await _auth_client(client)
+    created = await _create_session(client)
+    response = await _patch_working_draft(
+        client,
+        created["id"],
+        expected_version=created["version"] + 5,
+        node="idea_decomposition",
     )
     assert response.status_code == 409
+    assert response.json() == {
+        "code": "version_conflict",
+        "detail": "Loop Session was changed by another request",
+        "current_version": 1,
+    }
+    fetched = await client.get(f"/api/loop/sessions/{created['id']}")
+    assert fetched.json()["working_draft_node"] == "idea_interpretation"
+    assert fetched.json()["version"] == 1
+
+
+@pytest.mark.asyncio
+async def test_reopening_empty_workflow_node_is_invalid_working_draft_target(
+    client: AsyncClient,
+) -> None:
+    await _auth_client(client)
+    created = await _create_session(client)
+    session_id = created["id"]
+    await _confirm(client, session_id, "idea_interpretation")
+    confirmed = await _confirm(client, session_id, "idea_decomposition")
+    response = await _patch_working_draft(
+        client,
+        session_id,
+        expected_version=confirmed["version"],
+        node="research_inputs",
+    )
+    assert response.status_code == 409
+    assert response.json()["code"] == "invalid_working_draft_target"
+    fetched = await client.get(f"/api/loop/sessions/{session_id}")
+    assert fetched.json()["working_draft_node"] == "idea_decomposition"
+    assert fetched.json()["version"] == confirmed["version"]
+
+
+@pytest.mark.asyncio
+async def test_reopening_without_current_upstream_is_upstream_not_current(
+    client: AsyncClient,
+) -> None:
+    await _auth_client(client)
+    created = await _create_session(client)
+    response = await _patch_working_draft(
+        client,
+        created["id"],
+        expected_version=created["version"],
+        node="idea_decomposition",
+    )
+    assert response.status_code == 409
+    assert response.json()["code"] == "upstream_not_current"
+    fetched = await client.get(f"/api/loop/sessions/{created['id']}")
+    assert fetched.json()["working_draft_node"] == "idea_interpretation"
+    assert fetched.json()["working_draft_narrative"] == {}
+    assert fetched.json()["version"] == 1
+
+
+@pytest.mark.asyncio
+async def test_reopening_current_workflow_node_increments_version(client: AsyncClient) -> None:
+    await _auth_client(client)
+    created = await _create_session(client)
+    session_id = created["id"]
+    confirmed = await _confirm(client, session_id, "idea_interpretation")
+    response = await _patch_working_draft(
+        client,
+        session_id,
+        expected_version=confirmed["version"],
+        node="idea_interpretation",
+    )
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert payload["working_draft_node"] == "idea_interpretation"
+    assert payload["version"] == confirmed["version"] + 1
+    fetched = await client.get(f"/api/loop/sessions/{session_id}")
+    assert fetched.json()["working_draft_node"] == "idea_interpretation"
+    assert fetched.json()["version"] == confirmed["version"] + 1
 
 
 @pytest.mark.asyncio
@@ -236,9 +394,11 @@ async def test_identical_confirm_is_noop(client: AsyncClient) -> None:
     session_id = created["id"]
     first = await _confirm(client, session_id, "idea_interpretation")
     revision = _head(first, "idea_interpretation")["stage_revision_id"]
-    await client.patch(
-        f"/api/loop/sessions/{session_id}/working-draft",
-        json={"node": "idea_interpretation"},
+    await _patch_working_draft(
+        client,
+        session_id,
+        expected_version=first["version"],
+        node="idea_interpretation",
     )
     second = await _confirm(client, session_id, "idea_interpretation")
     assert _head(second, "idea_interpretation")["stage_revision_id"] == revision
@@ -282,9 +442,12 @@ async def test_changed_interpretation_marks_decomposition_stale(client: AsyncCli
     )
     assert card.status_code == 201
     await _confirm(client, session_id, "idea_decomposition")
-    await client.patch(
-        f"/api/loop/sessions/{session_id}/working-draft",
-        json={"node": "idea_interpretation", "narrative": {"understanding": "latency"}},
+    await _patch_working_draft(
+        client,
+        session_id,
+        expected_version=created["version"],
+        node="idea_interpretation",
+        narrative={"understanding": "latency"},
     )
     payload = await _confirm(client, session_id, "idea_interpretation")
     assert _head(payload, "idea_decomposition")["status"] == "stale"
@@ -302,9 +465,12 @@ async def test_prepare_grilling_lands_on_stale_decomposition(client: AsyncClient
         json={"kind": "problem", "body": {"text": "accuracy"}},
     )
     await _confirm(client, session_id, "idea_decomposition")
-    await client.patch(
-        f"/api/loop/sessions/{session_id}/working-draft",
-        json={"node": "idea_interpretation", "narrative": {"understanding": "latency"}},
+    await _patch_working_draft(
+        client,
+        session_id,
+        expected_version=created["version"],
+        node="idea_interpretation",
+        narrative={"understanding": "latency"},
     )
     await _confirm(client, session_id, "idea_interpretation")
     payload = await _prepare(client, session_id, "grilling")

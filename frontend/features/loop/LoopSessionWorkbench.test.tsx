@@ -27,6 +27,12 @@ vi.mock("./LoopSessionTitleEditor", () => ({
   ),
 }));
 
+vi.mock("./WorkingDraftNarrativeEditor", () => ({
+  WorkingDraftNarrativeEditor: ({ sessionId }: { sessionId: string }) => (
+    <p>Working Draft narrative editor for {sessionId}</p>
+  ),
+}));
+
 vi.mock("@/lib/api/generated/endpoints", () => ({
   useGetSessionApiLoopSessionsSessionIdGet: (...args: unknown[]) => getHook(...args),
 }));
@@ -222,5 +228,17 @@ describe("LoopSessionWorkbench", () => {
     getHook.mockReturnValueOnce({ isLoading: false, isError: true, refetch: vi.fn() });
     rerender(<LoopSessionWorkbench sessionId="session-1" />);
     expect(screen.getByRole("alert")).toHaveTextContent("could not load");
+  });
+
+  it("lets the Account enter the research idea in the interpretation Working Draft", () => {
+    search = new URLSearchParams(`stage=${LoopStage.grilling}`);
+    render(<LoopSessionWorkbench sessionId="session-1" />);
+    expect(screen.getByText("Working Draft narrative editor for session-1")).toBeInTheDocument();
+  });
+
+  it("does not open the Working Draft editor merely by selecting another Loop Stage", () => {
+    search = new URLSearchParams(`stage=${LoopStage.related_work}`);
+    render(<LoopSessionWorkbench sessionId="session-1" />);
+    expect(screen.queryByText(/Working Draft narrative editor/)).not.toBeInTheDocument();
   });
 });

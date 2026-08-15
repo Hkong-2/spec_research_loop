@@ -21,6 +21,7 @@ class PatchSessionRequest(BaseModel):
 class WorkingDraftPatchRequest(BaseModel):
     node: WorkflowNode | None = None
     narrative: dict[str, Any] | None = None
+    expected_version: int = Field(ge=1)
 
 
 class ConfirmRequest(BaseModel):

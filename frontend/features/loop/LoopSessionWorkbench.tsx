@@ -15,8 +15,11 @@ import {
   WORKFLOW_NODE_LABELS,
   catalogStage,
   resolveSelectedStage,
+  stageForWorkflowNode,
 } from "./catalog";
 import { LoopSessionTitleEditor } from "./LoopSessionTitleEditor";
+import { WorkingDraftNarrativeEditor } from "./WorkingDraftNarrativeEditor";
+import { LoopSessionSaveProvider } from "./loop-session-save";
 import { LOOP_STAGE_ICONS } from "./stage-icons";
 import {
   deriveStageSignals,
@@ -91,6 +94,7 @@ export function LoopSessionWorkbench({ sessionId }: { sessionId: string }) {
   });
 
   return (
+    <LoopSessionSaveProvider>
     <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 lg:grid-cols-12">
       <aside className="grid gap-4 lg:col-span-3 xl:col-span-3">
         <div className="rounded-md border bg-card p-3 shadow-sm">
@@ -145,6 +149,9 @@ export function LoopSessionWorkbench({ sessionId }: { sessionId: string }) {
           </Link>
         </p>
         <LoopSessionTitleEditor sessionId={sessionId} />
+        {stageForWorkflowNode(session.working_draft_node) === selectedStage ? (
+          <WorkingDraftNarrativeEditor sessionId={sessionId} />
+        ) : null}
         <section aria-label={`${selected.name} overview`}>
           <Card>
             <CardHeader>
@@ -180,6 +187,7 @@ export function LoopSessionWorkbench({ sessionId }: { sessionId: string }) {
         </section>
       </div>
     </div>
+    </LoopSessionSaveProvider>
   );
 }
 
