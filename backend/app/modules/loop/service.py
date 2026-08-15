@@ -8,10 +8,11 @@ from typing import Any
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import attributes, selectinload
 
+from app.core.errors import OperationalErrorException
 from app.modules.loop.catalog import (
     CARD_KIND_OWNER,
     LOOP_STAGE_NODES,
@@ -87,7 +88,7 @@ class LoopService:
         result = await self._db.scalars(
             select(LoopSession)
             .where(LoopSession.account_id == account_id)
-            .order_by(LoopSession.created_at.desc())
+            .order_by(LoopSession.updated_at.desc(), LoopSession.id.desc())
         )
         return [LoopSessionSummary.model_validate(row) for row in result.all()]
 
@@ -101,11 +102,39 @@ class LoopService:
         session_id: UUID,
         account_id: UUID,
         title: str | None,
+        expected_version: int,
     ) -> LoopSessionResponse:
         session = await self._load_session(session_id, account_id)
-        session.title = title
+        updated = await self._db.execute(
+            update(LoopSession)
+            .where(
+                LoopSession.id == session_id,
+                LoopSession.account_id == account_id,
+                LoopSession.version == expected_version,
+            )
+            .values(
+                title=title,
+                version=LoopSession.version + 1,
+                updated_at=func.now(),
+            )
+            .returning(LoopSession.version, LoopSession.updated_at)
+            .execution_options(synchronize_session=False)
+        )
+        updated_row = updated.one_or_none()
+        if updated_row is None:
+            await self._db.refresh(session, attribute_names=["version"])
+            raise OperationalErrorException(
+                status_code=status.HTTP_409_CONFLICT,
+                code="version_conflict",
+                detail="Loop Session was changed by another request",
+                current_version=session.version,
+            )
+        attributes.set_committed_value(session, "title", title)
+        attributes.set_committed_value(session, "version", updated_row.version)
+        attributes.set_committed_value(session, "updated_at", updated_row.updated_at)
+        response = await self._to_response(session)
         await self._db.commit()
-        return await self.get_session(session_id=session_id, account_id=account_id)
+        return response
 
     async def patch_working_draft(
         self,
@@ -391,6 +420,7 @@ class LoopService:
         return LoopSessionResponse(
             id=session.id,
             title=session.title,
+            version=session.version,
             working_draft_node=WorkflowNode(session.working_draft_node),
             working_draft_narrative=session.working_draft_narrative,
             node_heads=[

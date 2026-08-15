@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.adapters.storage import get_object_storage
 from app.core.config import get_settings
+from app.core.errors import OperationalErrorException, operational_error_handler
 from app.db.session import dispose_engine
 from app.modules.idea.api import router as idea_router
 from app.modules.identity.api import router as identity_router
@@ -34,6 +35,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(title="SpecResearch Loop", version="0.1.0", lifespan=lifespan)
+    app.add_exception_handler(OperationalErrorException, operational_error_handler)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origin_list,

@@ -84,6 +84,7 @@ async def test_create_session_requires_bearer(client: AsyncClient) -> None:
 async def test_create_session_has_empty_catalog_heads(client: AsyncClient) -> None:
     await _auth_client(client)
     payload = await _create_session(client)
+    assert payload["version"] == 1
     assert payload["working_draft_node"] == "idea_interpretation"
     assert payload["working_draft_narrative"] == {}
     assert payload["cards"] == []
@@ -103,11 +104,77 @@ async def test_list_and_get_and_patch_title(client: AsyncClient) -> None:
     listed = await client.get("/api/loop/sessions")
     assert listed.status_code == 200
     assert listed.json()[0]["id"] == session_id
-    patched = await client.patch(f"/api/loop/sessions/{session_id}", json={"title": "GPU budget"})
+    assert listed.json()[0]["version"] == 1
+    assert listed.json()[0]["updated_at"] == created["updated_at"]
+    patched = await client.patch(
+        f"/api/loop/sessions/{session_id}",
+        json={"title": "GPU budget", "expected_version": 1},
+    )
     assert patched.status_code == 200
     assert patched.json()["title"] == "GPU budget"
+    assert patched.json()["version"] == 2
     fetched = await client.get(f"/api/loop/sessions/{session_id}")
     assert fetched.json()["title"] == "GPU budget"
+    assert fetched.json()["version"] == 2
+
+
+@pytest.mark.asyncio
+async def test_list_sessions_orders_by_recent_activity(client: AsyncClient) -> None:
+    await _auth_client(client)
+    first = await _create_session(client, title="First")
+    second = await _create_session(client, title="Second")
+
+    renamed = await client.patch(
+        f"/api/loop/sessions/{first['id']}",
+        json={"title": "Most recent", "expected_version": first["version"]},
+    )
+    assert renamed.status_code == 200
+
+    listed = await client.get("/api/loop/sessions")
+    assert listed.status_code == 200
+    rows = listed.json()
+    assert [row["id"] for row in rows] == [first["id"], second["id"]]
+    assert rows[0]["updated_at"] == renamed.json()["updated_at"]
+
+
+@pytest.mark.asyncio
+async def test_patch_title_requires_expected_version(client: AsyncClient) -> None:
+    await _auth_client(client)
+    created = await _create_session(client)
+
+    response = await client.patch(
+        f"/api/loop/sessions/{created['id']}",
+        json={"title": "Missing version"},
+    )
+
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_stale_title_patch_preserves_server_value(client: AsyncClient) -> None:
+    await _auth_client(client)
+    created = await _create_session(client, title="Original")
+    accepted = await client.patch(
+        f"/api/loop/sessions/{created['id']}",
+        json={"title": "Accepted", "expected_version": created["version"]},
+    )
+    assert accepted.status_code == 200
+    assert accepted.json()["version"] == 2
+
+    stale = await client.patch(
+        f"/api/loop/sessions/{created['id']}",
+        json={"title": "Stale overwrite", "expected_version": created["version"]},
+    )
+
+    assert stale.status_code == 409
+    assert stale.json() == {
+        "code": "version_conflict",
+        "detail": "Loop Session was changed by another request",
+        "current_version": 2,
+    }
+    fetched = await client.get(f"/api/loop/sessions/{created['id']}")
+    assert fetched.json()["title"] == "Accepted"
+    assert fetched.json()["version"] == 2
 
 
 @pytest.mark.asyncio

@@ -6,6 +6,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.errors import OperationalError
 from app.db.session import get_db
 from app.modules.identity.deps import get_current_account
 from app.modules.identity.models import Account
@@ -62,7 +63,11 @@ async def get_session(
     return await _service(db).get_session(session_id=session_id, account_id=account.id)
 
 
-@router.patch("/sessions/{session_id}", response_model=LoopSessionResponse)
+@router.patch(
+    "/sessions/{session_id}",
+    response_model=LoopSessionResponse,
+    responses={409: {"model": OperationalError}},
+)
 async def patch_session(
     session_id: UUID,
     body: PatchSessionRequest,
@@ -73,6 +78,7 @@ async def patch_session(
         session_id=session_id,
         account_id=account.id,
         title=body.title,
+        expected_version=body.expected_version,
     )
 
 

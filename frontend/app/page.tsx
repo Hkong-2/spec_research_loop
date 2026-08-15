@@ -37,8 +37,8 @@ export default function HomePage() {
               The system evaluates readiness criteria. It does not guarantee conference acceptance.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href="/demo" className={cn(buttonVariants({ size: "lg" }))}>
-                {signedIn ? "Continue Loop Session" : "Start a Loop Session"}
+              <Link href="/sessions" className={cn(buttonVariants({ size: "lg" }))}>
+                {signedIn ? "Open Loop Sessions" : "Start a Loop Session"}
               </Link>
               {signedIn ? null : (
                 <Link href="/login" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}>

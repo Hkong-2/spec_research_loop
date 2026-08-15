@@ -14,7 +14,7 @@ export default function RegisterPage() {
           <CardDescription>An Account owns Loop Sessions you can save and resume.</CardDescription>
         </CardHeader>
         <CardContent>
-          <AuthForm mode="register" onSuccess={() => router.push("/demo")} />
+          <AuthForm mode="register" onSuccess={() => router.push("/sessions")} />
         </CardContent>
       </Card>
     </div>

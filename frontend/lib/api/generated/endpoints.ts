@@ -25,16 +25,29 @@ import type {
 
 import type {
   AccountResponse,
+  CardResponse,
+  ConfirmRequest,
+  CreateCardRequest,
+  CreateSessionRequest,
+  DecisionResponse,
   HTTPValidationError,
   HealthApiIdeaHealthGet200,
   HealthApiIdentityHealthGet200,
   HealthApiJudgementHealthGet200,
+  HealthApiLoopHealthGet200,
   HealthApiResearchHealthGet200,
   HealthApiSpecHealthGet200,
   LoginRequest,
+  LoopSessionResponse,
+  LoopSessionSummary,
+  OperationalError,
+  PatchCardRequest,
+  PatchSessionRequest,
+  PrepareRequest,
   RegisterRequest,
   RootHealthHealthGet200,
-  TokenResponse
+  TokenResponse,
+  WorkingDraftPatchRequest
 } from './model';
 
 import { customFetch } from '../mutator';
@@ -465,6 +478,1235 @@ export function useMeApiIdentityMeGet<TData = Awaited<ReturnType<typeof meApiIde
 
 
 
+
+export type healthApiLoopHealthGetResponse200 = {
+  data: HealthApiLoopHealthGet200
+  status: 200
+}
+
+export type healthApiLoopHealthGetResponseSuccess = (healthApiLoopHealthGetResponse200) & {
+  headers: Headers;
+};
+;
+
+export type healthApiLoopHealthGetResponse = (healthApiLoopHealthGetResponseSuccess)
+
+export const getHealthApiLoopHealthGetUrl = () => {
+
+
+
+
+  return `/api/loop/health`
+}
+
+/**
+ * @summary Health
+ */
+export const healthApiLoopHealthGet = async ( options?: Parameters<typeof customFetch>[1]): Promise<healthApiLoopHealthGetResponse> => {
+
+  return customFetch<healthApiLoopHealthGetResponse>(getHealthApiLoopHealthGetUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getHealthApiLoopHealthGetQueryKey = () => {
+    return [
+    `/api/loop/health`
+    ] as const;
+    }
+
+
+export const getHealthApiLoopHealthGetQueryOptions = <TData = Awaited<ReturnType<typeof healthApiLoopHealthGet>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof healthApiLoopHealthGet>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getHealthApiLoopHealthGetQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof healthApiLoopHealthGet>>> = ({ signal }) => healthApiLoopHealthGet({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof healthApiLoopHealthGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type HealthApiLoopHealthGetQueryResult = NonNullable<Awaited<ReturnType<typeof healthApiLoopHealthGet>>>
+export type HealthApiLoopHealthGetQueryError = ErrorType<unknown>
+
+
+export function useHealthApiLoopHealthGet<TData = Awaited<ReturnType<typeof healthApiLoopHealthGet>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof healthApiLoopHealthGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof healthApiLoopHealthGet>>,
+          TError,
+          Awaited<ReturnType<typeof healthApiLoopHealthGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useHealthApiLoopHealthGet<TData = Awaited<ReturnType<typeof healthApiLoopHealthGet>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof healthApiLoopHealthGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof healthApiLoopHealthGet>>,
+          TError,
+          Awaited<ReturnType<typeof healthApiLoopHealthGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useHealthApiLoopHealthGet<TData = Awaited<ReturnType<typeof healthApiLoopHealthGet>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof healthApiLoopHealthGet>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Health
+ */
+
+export function useHealthApiLoopHealthGet<TData = Awaited<ReturnType<typeof healthApiLoopHealthGet>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof healthApiLoopHealthGet>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getHealthApiLoopHealthGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type listSessionsApiLoopSessionsGetResponse200 = {
+  data: LoopSessionSummary[]
+  status: 200
+}
+
+export type listSessionsApiLoopSessionsGetResponseSuccess = (listSessionsApiLoopSessionsGetResponse200) & {
+  headers: Headers;
+};
+;
+
+export type listSessionsApiLoopSessionsGetResponse = (listSessionsApiLoopSessionsGetResponseSuccess)
+
+export const getListSessionsApiLoopSessionsGetUrl = () => {
+
+
+
+
+  return `/api/loop/sessions`
+}
+
+/**
+ * @summary List Sessions
+ */
+export const listSessionsApiLoopSessionsGet = async ( options?: Parameters<typeof customFetch>[1]): Promise<listSessionsApiLoopSessionsGetResponse> => {
+
+  return customFetch<listSessionsApiLoopSessionsGetResponse>(getListSessionsApiLoopSessionsGetUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListSessionsApiLoopSessionsGetQueryKey = () => {
+    return [
+    `/api/loop/sessions`
+    ] as const;
+    }
+
+
+export const getListSessionsApiLoopSessionsGetQueryOptions = <TData = Awaited<ReturnType<typeof listSessionsApiLoopSessionsGet>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiLoopSessionsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListSessionsApiLoopSessionsGetQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listSessionsApiLoopSessionsGet>>> = ({ signal }) => listSessionsApiLoopSessionsGet({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiLoopSessionsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListSessionsApiLoopSessionsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listSessionsApiLoopSessionsGet>>>
+export type ListSessionsApiLoopSessionsGetQueryError = ErrorType<unknown>
+
+
+export function useListSessionsApiLoopSessionsGet<TData = Awaited<ReturnType<typeof listSessionsApiLoopSessionsGet>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiLoopSessionsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listSessionsApiLoopSessionsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listSessionsApiLoopSessionsGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListSessionsApiLoopSessionsGet<TData = Awaited<ReturnType<typeof listSessionsApiLoopSessionsGet>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiLoopSessionsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listSessionsApiLoopSessionsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listSessionsApiLoopSessionsGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListSessionsApiLoopSessionsGet<TData = Awaited<ReturnType<typeof listSessionsApiLoopSessionsGet>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiLoopSessionsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Sessions
+ */
+
+export function useListSessionsApiLoopSessionsGet<TData = Awaited<ReturnType<typeof listSessionsApiLoopSessionsGet>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listSessionsApiLoopSessionsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListSessionsApiLoopSessionsGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type createSessionApiLoopSessionsPostResponse201 = {
+  data: LoopSessionResponse
+  status: 201
+}
+
+export type createSessionApiLoopSessionsPostResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type createSessionApiLoopSessionsPostResponseSuccess = (createSessionApiLoopSessionsPostResponse201) & {
+  headers: Headers;
+};
+export type createSessionApiLoopSessionsPostResponseError = (createSessionApiLoopSessionsPostResponse422) & {
+  headers: Headers;
+};
+
+export type createSessionApiLoopSessionsPostResponse = (createSessionApiLoopSessionsPostResponseSuccess | createSessionApiLoopSessionsPostResponseError)
+
+export const getCreateSessionApiLoopSessionsPostUrl = () => {
+
+
+
+
+  return `/api/loop/sessions`
+}
+
+/**
+ * @summary Create Session
+ */
+export const createSessionApiLoopSessionsPost = async (createSessionRequest: CreateSessionRequest, options?: Parameters<typeof customFetch>[1]): Promise<createSessionApiLoopSessionsPostResponse> => {
+
+  return customFetch<createSessionApiLoopSessionsPostResponse>(getCreateSessionApiLoopSessionsPostUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createSessionRequest)
+  }
+);}
+
+
+
+
+
+export const getCreateSessionApiLoopSessionsPostMutationOptions = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSessionApiLoopSessionsPost>>, TError,{data: BodyType<CreateSessionRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createSessionApiLoopSessionsPost>>, TError,{data: BodyType<CreateSessionRequest>}, TContext> => {
+
+const mutationKey = ['createSessionApiLoopSessionsPost'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createSessionApiLoopSessionsPost>>, {data: BodyType<CreateSessionRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createSessionApiLoopSessionsPost(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateSessionApiLoopSessionsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createSessionApiLoopSessionsPost>>>
+    export type CreateSessionApiLoopSessionsPostMutationBody = BodyType<CreateSessionRequest>
+    export type CreateSessionApiLoopSessionsPostMutationError = ErrorType<HTTPValidationError>
+
+    /**
+ * @summary Create Session
+ */
+export const useCreateSessionApiLoopSessionsPost = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createSessionApiLoopSessionsPost>>, TError,{data: BodyType<CreateSessionRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createSessionApiLoopSessionsPost>>,
+        TError,
+        {data: BodyType<CreateSessionRequest>},
+        TContext
+      > => {
+      return useMutation(getCreateSessionApiLoopSessionsPostMutationOptions(options), queryClient);
+    }
+
+export type getSessionApiLoopSessionsSessionIdGetResponse200 = {
+  data: LoopSessionResponse
+  status: 200
+}
+
+export type getSessionApiLoopSessionsSessionIdGetResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type getSessionApiLoopSessionsSessionIdGetResponseSuccess = (getSessionApiLoopSessionsSessionIdGetResponse200) & {
+  headers: Headers;
+};
+export type getSessionApiLoopSessionsSessionIdGetResponseError = (getSessionApiLoopSessionsSessionIdGetResponse422) & {
+  headers: Headers;
+};
+
+export type getSessionApiLoopSessionsSessionIdGetResponse = (getSessionApiLoopSessionsSessionIdGetResponseSuccess | getSessionApiLoopSessionsSessionIdGetResponseError)
+
+export const getGetSessionApiLoopSessionsSessionIdGetUrl = (sessionId: string,) => {
+
+
+
+
+  return `/api/loop/sessions/${sessionId}`
+}
+
+/**
+ * @summary Get Session
+ */
+export const getSessionApiLoopSessionsSessionIdGet = async (sessionId: string, options?: Parameters<typeof customFetch>[1]): Promise<getSessionApiLoopSessionsSessionIdGetResponse> => {
+
+  return customFetch<getSessionApiLoopSessionsSessionIdGetResponse>(getGetSessionApiLoopSessionsSessionIdGetUrl(sessionId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetSessionApiLoopSessionsSessionIdGetQueryKey = (sessionId: string,) => {
+    return [
+    `/api/loop/sessions/${sessionId}`
+    ] as const;
+    }
+
+
+export const getGetSessionApiLoopSessionsSessionIdGetQueryOptions = <TData = Awaited<ReturnType<typeof getSessionApiLoopSessionsSessionIdGet>>, TError = ErrorType<HTTPValidationError>>(sessionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSessionApiLoopSessionsSessionIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetSessionApiLoopSessionsSessionIdGetQueryKey(sessionId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getSessionApiLoopSessionsSessionIdGet>>> = ({ signal }) => getSessionApiLoopSessionsSessionIdGet(sessionId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: sessionId !== null && sessionId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getSessionApiLoopSessionsSessionIdGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetSessionApiLoopSessionsSessionIdGetQueryResult = NonNullable<Awaited<ReturnType<typeof getSessionApiLoopSessionsSessionIdGet>>>
+export type GetSessionApiLoopSessionsSessionIdGetQueryError = ErrorType<HTTPValidationError>
+
+
+export function useGetSessionApiLoopSessionsSessionIdGet<TData = Awaited<ReturnType<typeof getSessionApiLoopSessionsSessionIdGet>>, TError = ErrorType<HTTPValidationError>>(
+ sessionId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSessionApiLoopSessionsSessionIdGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSessionApiLoopSessionsSessionIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getSessionApiLoopSessionsSessionIdGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSessionApiLoopSessionsSessionIdGet<TData = Awaited<ReturnType<typeof getSessionApiLoopSessionsSessionIdGet>>, TError = ErrorType<HTTPValidationError>>(
+ sessionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSessionApiLoopSessionsSessionIdGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getSessionApiLoopSessionsSessionIdGet>>,
+          TError,
+          Awaited<ReturnType<typeof getSessionApiLoopSessionsSessionIdGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetSessionApiLoopSessionsSessionIdGet<TData = Awaited<ReturnType<typeof getSessionApiLoopSessionsSessionIdGet>>, TError = ErrorType<HTTPValidationError>>(
+ sessionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSessionApiLoopSessionsSessionIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Session
+ */
+
+export function useGetSessionApiLoopSessionsSessionIdGet<TData = Awaited<ReturnType<typeof getSessionApiLoopSessionsSessionIdGet>>, TError = ErrorType<HTTPValidationError>>(
+ sessionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getSessionApiLoopSessionsSessionIdGet>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetSessionApiLoopSessionsSessionIdGetQueryOptions(sessionId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type patchSessionApiLoopSessionsSessionIdPatchResponse200 = {
+  data: LoopSessionResponse
+  status: 200
+}
+
+export type patchSessionApiLoopSessionsSessionIdPatchResponse409 = {
+  data: OperationalError
+  status: 409
+}
+
+export type patchSessionApiLoopSessionsSessionIdPatchResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type patchSessionApiLoopSessionsSessionIdPatchResponseSuccess = (patchSessionApiLoopSessionsSessionIdPatchResponse200) & {
+  headers: Headers;
+};
+export type patchSessionApiLoopSessionsSessionIdPatchResponseError = (patchSessionApiLoopSessionsSessionIdPatchResponse409 | patchSessionApiLoopSessionsSessionIdPatchResponse422) & {
+  headers: Headers;
+};
+
+export type patchSessionApiLoopSessionsSessionIdPatchResponse = (patchSessionApiLoopSessionsSessionIdPatchResponseSuccess | patchSessionApiLoopSessionsSessionIdPatchResponseError)
+
+export const getPatchSessionApiLoopSessionsSessionIdPatchUrl = (sessionId: string,) => {
+
+
+
+
+  return `/api/loop/sessions/${sessionId}`
+}
+
+/**
+ * @summary Patch Session
+ */
+export const patchSessionApiLoopSessionsSessionIdPatch = async (sessionId: string,
+    patchSessionRequest: PatchSessionRequest, options?: Parameters<typeof customFetch>[1]): Promise<patchSessionApiLoopSessionsSessionIdPatchResponse> => {
+
+  return customFetch<patchSessionApiLoopSessionsSessionIdPatchResponse>(getPatchSessionApiLoopSessionsSessionIdPatchUrl(sessionId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(patchSessionRequest)
+  }
+);}
+
+
+
+
+
+export const getPatchSessionApiLoopSessionsSessionIdPatchMutationOptions = <TError = ErrorType<OperationalError | HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchSessionApiLoopSessionsSessionIdPatch>>, TError,{sessionId: string;data: BodyType<PatchSessionRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof patchSessionApiLoopSessionsSessionIdPatch>>, TError,{sessionId: string;data: BodyType<PatchSessionRequest>}, TContext> => {
+
+const mutationKey = ['patchSessionApiLoopSessionsSessionIdPatch'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchSessionApiLoopSessionsSessionIdPatch>>, {sessionId: string;data: BodyType<PatchSessionRequest>}> = (props) => {
+          const {sessionId,data} = props ?? {};
+
+          return  patchSessionApiLoopSessionsSessionIdPatch(sessionId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PatchSessionApiLoopSessionsSessionIdPatchMutationResult = NonNullable<Awaited<ReturnType<typeof patchSessionApiLoopSessionsSessionIdPatch>>>
+    export type PatchSessionApiLoopSessionsSessionIdPatchMutationBody = BodyType<PatchSessionRequest>
+    export type PatchSessionApiLoopSessionsSessionIdPatchMutationError = ErrorType<OperationalError | HTTPValidationError>
+
+    /**
+ * @summary Patch Session
+ */
+export const usePatchSessionApiLoopSessionsSessionIdPatch = <TError = ErrorType<OperationalError | HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchSessionApiLoopSessionsSessionIdPatch>>, TError,{sessionId: string;data: BodyType<PatchSessionRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof patchSessionApiLoopSessionsSessionIdPatch>>,
+        TError,
+        {sessionId: string;data: BodyType<PatchSessionRequest>},
+        TContext
+      > => {
+      return useMutation(getPatchSessionApiLoopSessionsSessionIdPatchMutationOptions(options), queryClient);
+    }
+
+export type patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchResponse200 = {
+  data: LoopSessionResponse
+  status: 200
+}
+
+export type patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchResponseSuccess = (patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchResponse200) & {
+  headers: Headers;
+};
+export type patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchResponseError = (patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchResponse422) & {
+  headers: Headers;
+};
+
+export type patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchResponse = (patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchResponseSuccess | patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchResponseError)
+
+export const getPatchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchUrl = (sessionId: string,) => {
+
+
+
+
+  return `/api/loop/sessions/${sessionId}/working-draft`
+}
+
+/**
+ * @summary Patch Working Draft
+ */
+export const patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatch = async (sessionId: string,
+    workingDraftPatchRequest: WorkingDraftPatchRequest, options?: Parameters<typeof customFetch>[1]): Promise<patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchResponse> => {
+
+  return customFetch<patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchResponse>(getPatchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchUrl(sessionId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(workingDraftPatchRequest)
+  }
+);}
+
+
+
+
+
+export const getPatchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchMutationOptions = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatch>>, TError,{sessionId: string;data: BodyType<WorkingDraftPatchRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatch>>, TError,{sessionId: string;data: BodyType<WorkingDraftPatchRequest>}, TContext> => {
+
+const mutationKey = ['patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatch'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatch>>, {sessionId: string;data: BodyType<WorkingDraftPatchRequest>}> = (props) => {
+          const {sessionId,data} = props ?? {};
+
+          return  patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatch(sessionId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PatchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchMutationResult = NonNullable<Awaited<ReturnType<typeof patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatch>>>
+    export type PatchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchMutationBody = BodyType<WorkingDraftPatchRequest>
+    export type PatchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchMutationError = ErrorType<HTTPValidationError>
+
+    /**
+ * @summary Patch Working Draft
+ */
+export const usePatchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatch = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatch>>, TError,{sessionId: string;data: BodyType<WorkingDraftPatchRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof patchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatch>>,
+        TError,
+        {sessionId: string;data: BodyType<WorkingDraftPatchRequest>},
+        TContext
+      > => {
+      return useMutation(getPatchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatchMutationOptions(options), queryClient);
+    }
+
+export type listCardsApiLoopSessionsSessionIdCardsGetResponse200 = {
+  data: CardResponse[]
+  status: 200
+}
+
+export type listCardsApiLoopSessionsSessionIdCardsGetResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type listCardsApiLoopSessionsSessionIdCardsGetResponseSuccess = (listCardsApiLoopSessionsSessionIdCardsGetResponse200) & {
+  headers: Headers;
+};
+export type listCardsApiLoopSessionsSessionIdCardsGetResponseError = (listCardsApiLoopSessionsSessionIdCardsGetResponse422) & {
+  headers: Headers;
+};
+
+export type listCardsApiLoopSessionsSessionIdCardsGetResponse = (listCardsApiLoopSessionsSessionIdCardsGetResponseSuccess | listCardsApiLoopSessionsSessionIdCardsGetResponseError)
+
+export const getListCardsApiLoopSessionsSessionIdCardsGetUrl = (sessionId: string,) => {
+
+
+
+
+  return `/api/loop/sessions/${sessionId}/cards`
+}
+
+/**
+ * @summary List Cards
+ */
+export const listCardsApiLoopSessionsSessionIdCardsGet = async (sessionId: string, options?: Parameters<typeof customFetch>[1]): Promise<listCardsApiLoopSessionsSessionIdCardsGetResponse> => {
+
+  return customFetch<listCardsApiLoopSessionsSessionIdCardsGetResponse>(getListCardsApiLoopSessionsSessionIdCardsGetUrl(sessionId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListCardsApiLoopSessionsSessionIdCardsGetQueryKey = (sessionId: string,) => {
+    return [
+    `/api/loop/sessions/${sessionId}/cards`
+    ] as const;
+    }
+
+
+export const getListCardsApiLoopSessionsSessionIdCardsGetQueryOptions = <TData = Awaited<ReturnType<typeof listCardsApiLoopSessionsSessionIdCardsGet>>, TError = ErrorType<HTTPValidationError>>(sessionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCardsApiLoopSessionsSessionIdCardsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListCardsApiLoopSessionsSessionIdCardsGetQueryKey(sessionId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listCardsApiLoopSessionsSessionIdCardsGet>>> = ({ signal }) => listCardsApiLoopSessionsSessionIdCardsGet(sessionId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: sessionId !== null && sessionId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listCardsApiLoopSessionsSessionIdCardsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListCardsApiLoopSessionsSessionIdCardsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listCardsApiLoopSessionsSessionIdCardsGet>>>
+export type ListCardsApiLoopSessionsSessionIdCardsGetQueryError = ErrorType<HTTPValidationError>
+
+
+export function useListCardsApiLoopSessionsSessionIdCardsGet<TData = Awaited<ReturnType<typeof listCardsApiLoopSessionsSessionIdCardsGet>>, TError = ErrorType<HTTPValidationError>>(
+ sessionId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCardsApiLoopSessionsSessionIdCardsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listCardsApiLoopSessionsSessionIdCardsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listCardsApiLoopSessionsSessionIdCardsGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListCardsApiLoopSessionsSessionIdCardsGet<TData = Awaited<ReturnType<typeof listCardsApiLoopSessionsSessionIdCardsGet>>, TError = ErrorType<HTTPValidationError>>(
+ sessionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCardsApiLoopSessionsSessionIdCardsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listCardsApiLoopSessionsSessionIdCardsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listCardsApiLoopSessionsSessionIdCardsGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListCardsApiLoopSessionsSessionIdCardsGet<TData = Awaited<ReturnType<typeof listCardsApiLoopSessionsSessionIdCardsGet>>, TError = ErrorType<HTTPValidationError>>(
+ sessionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCardsApiLoopSessionsSessionIdCardsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Cards
+ */
+
+export function useListCardsApiLoopSessionsSessionIdCardsGet<TData = Awaited<ReturnType<typeof listCardsApiLoopSessionsSessionIdCardsGet>>, TError = ErrorType<HTTPValidationError>>(
+ sessionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listCardsApiLoopSessionsSessionIdCardsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListCardsApiLoopSessionsSessionIdCardsGetQueryOptions(sessionId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type createCardApiLoopSessionsSessionIdCardsPostResponse201 = {
+  data: CardResponse
+  status: 201
+}
+
+export type createCardApiLoopSessionsSessionIdCardsPostResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type createCardApiLoopSessionsSessionIdCardsPostResponseSuccess = (createCardApiLoopSessionsSessionIdCardsPostResponse201) & {
+  headers: Headers;
+};
+export type createCardApiLoopSessionsSessionIdCardsPostResponseError = (createCardApiLoopSessionsSessionIdCardsPostResponse422) & {
+  headers: Headers;
+};
+
+export type createCardApiLoopSessionsSessionIdCardsPostResponse = (createCardApiLoopSessionsSessionIdCardsPostResponseSuccess | createCardApiLoopSessionsSessionIdCardsPostResponseError)
+
+export const getCreateCardApiLoopSessionsSessionIdCardsPostUrl = (sessionId: string,) => {
+
+
+
+
+  return `/api/loop/sessions/${sessionId}/cards`
+}
+
+/**
+ * @summary Create Card
+ */
+export const createCardApiLoopSessionsSessionIdCardsPost = async (sessionId: string,
+    createCardRequest: CreateCardRequest, options?: Parameters<typeof customFetch>[1]): Promise<createCardApiLoopSessionsSessionIdCardsPostResponse> => {
+
+  return customFetch<createCardApiLoopSessionsSessionIdCardsPostResponse>(getCreateCardApiLoopSessionsSessionIdCardsPostUrl(sessionId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(createCardRequest)
+  }
+);}
+
+
+
+
+
+export const getCreateCardApiLoopSessionsSessionIdCardsPostMutationOptions = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCardApiLoopSessionsSessionIdCardsPost>>, TError,{sessionId: string;data: BodyType<CreateCardRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createCardApiLoopSessionsSessionIdCardsPost>>, TError,{sessionId: string;data: BodyType<CreateCardRequest>}, TContext> => {
+
+const mutationKey = ['createCardApiLoopSessionsSessionIdCardsPost'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createCardApiLoopSessionsSessionIdCardsPost>>, {sessionId: string;data: BodyType<CreateCardRequest>}> = (props) => {
+          const {sessionId,data} = props ?? {};
+
+          return  createCardApiLoopSessionsSessionIdCardsPost(sessionId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateCardApiLoopSessionsSessionIdCardsPostMutationResult = NonNullable<Awaited<ReturnType<typeof createCardApiLoopSessionsSessionIdCardsPost>>>
+    export type CreateCardApiLoopSessionsSessionIdCardsPostMutationBody = BodyType<CreateCardRequest>
+    export type CreateCardApiLoopSessionsSessionIdCardsPostMutationError = ErrorType<HTTPValidationError>
+
+    /**
+ * @summary Create Card
+ */
+export const useCreateCardApiLoopSessionsSessionIdCardsPost = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createCardApiLoopSessionsSessionIdCardsPost>>, TError,{sessionId: string;data: BodyType<CreateCardRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof createCardApiLoopSessionsSessionIdCardsPost>>,
+        TError,
+        {sessionId: string;data: BodyType<CreateCardRequest>},
+        TContext
+      > => {
+      return useMutation(getCreateCardApiLoopSessionsSessionIdCardsPostMutationOptions(options), queryClient);
+    }
+
+export type patchCardApiLoopSessionsSessionIdCardsCardIdPatchResponse200 = {
+  data: CardResponse
+  status: 200
+}
+
+export type patchCardApiLoopSessionsSessionIdCardsCardIdPatchResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type patchCardApiLoopSessionsSessionIdCardsCardIdPatchResponseSuccess = (patchCardApiLoopSessionsSessionIdCardsCardIdPatchResponse200) & {
+  headers: Headers;
+};
+export type patchCardApiLoopSessionsSessionIdCardsCardIdPatchResponseError = (patchCardApiLoopSessionsSessionIdCardsCardIdPatchResponse422) & {
+  headers: Headers;
+};
+
+export type patchCardApiLoopSessionsSessionIdCardsCardIdPatchResponse = (patchCardApiLoopSessionsSessionIdCardsCardIdPatchResponseSuccess | patchCardApiLoopSessionsSessionIdCardsCardIdPatchResponseError)
+
+export const getPatchCardApiLoopSessionsSessionIdCardsCardIdPatchUrl = (sessionId: string,
+    cardId: string,) => {
+
+
+
+
+  return `/api/loop/sessions/${sessionId}/cards/${cardId}`
+}
+
+/**
+ * @summary Patch Card
+ */
+export const patchCardApiLoopSessionsSessionIdCardsCardIdPatch = async (sessionId: string,
+    cardId: string,
+    patchCardRequest: PatchCardRequest, options?: Parameters<typeof customFetch>[1]): Promise<patchCardApiLoopSessionsSessionIdCardsCardIdPatchResponse> => {
+
+  return customFetch<patchCardApiLoopSessionsSessionIdCardsCardIdPatchResponse>(getPatchCardApiLoopSessionsSessionIdCardsCardIdPatchUrl(sessionId,cardId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(patchCardRequest)
+  }
+);}
+
+
+
+
+
+export const getPatchCardApiLoopSessionsSessionIdCardsCardIdPatchMutationOptions = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchCardApiLoopSessionsSessionIdCardsCardIdPatch>>, TError,{sessionId: string;cardId: string;data: BodyType<PatchCardRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof patchCardApiLoopSessionsSessionIdCardsCardIdPatch>>, TError,{sessionId: string;cardId: string;data: BodyType<PatchCardRequest>}, TContext> => {
+
+const mutationKey = ['patchCardApiLoopSessionsSessionIdCardsCardIdPatch'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchCardApiLoopSessionsSessionIdCardsCardIdPatch>>, {sessionId: string;cardId: string;data: BodyType<PatchCardRequest>}> = (props) => {
+          const {sessionId,cardId,data} = props ?? {};
+
+          return  patchCardApiLoopSessionsSessionIdCardsCardIdPatch(sessionId,cardId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type PatchCardApiLoopSessionsSessionIdCardsCardIdPatchMutationResult = NonNullable<Awaited<ReturnType<typeof patchCardApiLoopSessionsSessionIdCardsCardIdPatch>>>
+    export type PatchCardApiLoopSessionsSessionIdCardsCardIdPatchMutationBody = BodyType<PatchCardRequest>
+    export type PatchCardApiLoopSessionsSessionIdCardsCardIdPatchMutationError = ErrorType<HTTPValidationError>
+
+    /**
+ * @summary Patch Card
+ */
+export const usePatchCardApiLoopSessionsSessionIdCardsCardIdPatch = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof patchCardApiLoopSessionsSessionIdCardsCardIdPatch>>, TError,{sessionId: string;cardId: string;data: BodyType<PatchCardRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof patchCardApiLoopSessionsSessionIdCardsCardIdPatch>>,
+        TError,
+        {sessionId: string;cardId: string;data: BodyType<PatchCardRequest>},
+        TContext
+      > => {
+      return useMutation(getPatchCardApiLoopSessionsSessionIdCardsCardIdPatchMutationOptions(options), queryClient);
+    }
+
+export type listDecisionsApiLoopSessionsSessionIdDecisionsGetResponse200 = {
+  data: DecisionResponse[]
+  status: 200
+}
+
+export type listDecisionsApiLoopSessionsSessionIdDecisionsGetResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type listDecisionsApiLoopSessionsSessionIdDecisionsGetResponseSuccess = (listDecisionsApiLoopSessionsSessionIdDecisionsGetResponse200) & {
+  headers: Headers;
+};
+export type listDecisionsApiLoopSessionsSessionIdDecisionsGetResponseError = (listDecisionsApiLoopSessionsSessionIdDecisionsGetResponse422) & {
+  headers: Headers;
+};
+
+export type listDecisionsApiLoopSessionsSessionIdDecisionsGetResponse = (listDecisionsApiLoopSessionsSessionIdDecisionsGetResponseSuccess | listDecisionsApiLoopSessionsSessionIdDecisionsGetResponseError)
+
+export const getListDecisionsApiLoopSessionsSessionIdDecisionsGetUrl = (sessionId: string,) => {
+
+
+
+
+  return `/api/loop/sessions/${sessionId}/decisions`
+}
+
+/**
+ * @summary List Decisions
+ */
+export const listDecisionsApiLoopSessionsSessionIdDecisionsGet = async (sessionId: string, options?: Parameters<typeof customFetch>[1]): Promise<listDecisionsApiLoopSessionsSessionIdDecisionsGetResponse> => {
+
+  return customFetch<listDecisionsApiLoopSessionsSessionIdDecisionsGetResponse>(getListDecisionsApiLoopSessionsSessionIdDecisionsGetUrl(sessionId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListDecisionsApiLoopSessionsSessionIdDecisionsGetQueryKey = (sessionId: string,) => {
+    return [
+    `/api/loop/sessions/${sessionId}/decisions`
+    ] as const;
+    }
+
+
+export const getListDecisionsApiLoopSessionsSessionIdDecisionsGetQueryOptions = <TData = Awaited<ReturnType<typeof listDecisionsApiLoopSessionsSessionIdDecisionsGet>>, TError = ErrorType<HTTPValidationError>>(sessionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDecisionsApiLoopSessionsSessionIdDecisionsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListDecisionsApiLoopSessionsSessionIdDecisionsGetQueryKey(sessionId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listDecisionsApiLoopSessionsSessionIdDecisionsGet>>> = ({ signal }) => listDecisionsApiLoopSessionsSessionIdDecisionsGet(sessionId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: sessionId !== null && sessionId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listDecisionsApiLoopSessionsSessionIdDecisionsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ListDecisionsApiLoopSessionsSessionIdDecisionsGetQueryResult = NonNullable<Awaited<ReturnType<typeof listDecisionsApiLoopSessionsSessionIdDecisionsGet>>>
+export type ListDecisionsApiLoopSessionsSessionIdDecisionsGetQueryError = ErrorType<HTTPValidationError>
+
+
+export function useListDecisionsApiLoopSessionsSessionIdDecisionsGet<TData = Awaited<ReturnType<typeof listDecisionsApiLoopSessionsSessionIdDecisionsGet>>, TError = ErrorType<HTTPValidationError>>(
+ sessionId: string, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDecisionsApiLoopSessionsSessionIdDecisionsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listDecisionsApiLoopSessionsSessionIdDecisionsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listDecisionsApiLoopSessionsSessionIdDecisionsGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListDecisionsApiLoopSessionsSessionIdDecisionsGet<TData = Awaited<ReturnType<typeof listDecisionsApiLoopSessionsSessionIdDecisionsGet>>, TError = ErrorType<HTTPValidationError>>(
+ sessionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDecisionsApiLoopSessionsSessionIdDecisionsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof listDecisionsApiLoopSessionsSessionIdDecisionsGet>>,
+          TError,
+          Awaited<ReturnType<typeof listDecisionsApiLoopSessionsSessionIdDecisionsGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useListDecisionsApiLoopSessionsSessionIdDecisionsGet<TData = Awaited<ReturnType<typeof listDecisionsApiLoopSessionsSessionIdDecisionsGet>>, TError = ErrorType<HTTPValidationError>>(
+ sessionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDecisionsApiLoopSessionsSessionIdDecisionsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary List Decisions
+ */
+
+export function useListDecisionsApiLoopSessionsSessionIdDecisionsGet<TData = Awaited<ReturnType<typeof listDecisionsApiLoopSessionsSessionIdDecisionsGet>>, TError = ErrorType<HTTPValidationError>>(
+ sessionId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof listDecisionsApiLoopSessionsSessionIdDecisionsGet>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getListDecisionsApiLoopSessionsSessionIdDecisionsGetQueryOptions(sessionId,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type confirmApiLoopSessionsSessionIdConfirmPostResponse200 = {
+  data: LoopSessionResponse
+  status: 200
+}
+
+export type confirmApiLoopSessionsSessionIdConfirmPostResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type confirmApiLoopSessionsSessionIdConfirmPostResponseSuccess = (confirmApiLoopSessionsSessionIdConfirmPostResponse200) & {
+  headers: Headers;
+};
+export type confirmApiLoopSessionsSessionIdConfirmPostResponseError = (confirmApiLoopSessionsSessionIdConfirmPostResponse422) & {
+  headers: Headers;
+};
+
+export type confirmApiLoopSessionsSessionIdConfirmPostResponse = (confirmApiLoopSessionsSessionIdConfirmPostResponseSuccess | confirmApiLoopSessionsSessionIdConfirmPostResponseError)
+
+export const getConfirmApiLoopSessionsSessionIdConfirmPostUrl = (sessionId: string,) => {
+
+
+
+
+  return `/api/loop/sessions/${sessionId}/confirm`
+}
+
+/**
+ * @summary Confirm
+ */
+export const confirmApiLoopSessionsSessionIdConfirmPost = async (sessionId: string,
+    confirmRequest: ConfirmRequest, options?: Parameters<typeof customFetch>[1]): Promise<confirmApiLoopSessionsSessionIdConfirmPostResponse> => {
+
+  return customFetch<confirmApiLoopSessionsSessionIdConfirmPostResponse>(getConfirmApiLoopSessionsSessionIdConfirmPostUrl(sessionId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(confirmRequest)
+  }
+);}
+
+
+
+
+
+export const getConfirmApiLoopSessionsSessionIdConfirmPostMutationOptions = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmApiLoopSessionsSessionIdConfirmPost>>, TError,{sessionId: string;data: BodyType<ConfirmRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof confirmApiLoopSessionsSessionIdConfirmPost>>, TError,{sessionId: string;data: BodyType<ConfirmRequest>}, TContext> => {
+
+const mutationKey = ['confirmApiLoopSessionsSessionIdConfirmPost'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof confirmApiLoopSessionsSessionIdConfirmPost>>, {sessionId: string;data: BodyType<ConfirmRequest>}> = (props) => {
+          const {sessionId,data} = props ?? {};
+
+          return  confirmApiLoopSessionsSessionIdConfirmPost(sessionId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConfirmApiLoopSessionsSessionIdConfirmPostMutationResult = NonNullable<Awaited<ReturnType<typeof confirmApiLoopSessionsSessionIdConfirmPost>>>
+    export type ConfirmApiLoopSessionsSessionIdConfirmPostMutationBody = BodyType<ConfirmRequest>
+    export type ConfirmApiLoopSessionsSessionIdConfirmPostMutationError = ErrorType<HTTPValidationError>
+
+    /**
+ * @summary Confirm
+ */
+export const useConfirmApiLoopSessionsSessionIdConfirmPost = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmApiLoopSessionsSessionIdConfirmPost>>, TError,{sessionId: string;data: BodyType<ConfirmRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof confirmApiLoopSessionsSessionIdConfirmPost>>,
+        TError,
+        {sessionId: string;data: BodyType<ConfirmRequest>},
+        TContext
+      > => {
+      return useMutation(getConfirmApiLoopSessionsSessionIdConfirmPostMutationOptions(options), queryClient);
+    }
+
+export type recomputePrepareApiLoopSessionsSessionIdRecomputePreparePostResponse200 = {
+  data: LoopSessionResponse
+  status: 200
+}
+
+export type recomputePrepareApiLoopSessionsSessionIdRecomputePreparePostResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type recomputePrepareApiLoopSessionsSessionIdRecomputePreparePostResponseSuccess = (recomputePrepareApiLoopSessionsSessionIdRecomputePreparePostResponse200) & {
+  headers: Headers;
+};
+export type recomputePrepareApiLoopSessionsSessionIdRecomputePreparePostResponseError = (recomputePrepareApiLoopSessionsSessionIdRecomputePreparePostResponse422) & {
+  headers: Headers;
+};
+
+export type recomputePrepareApiLoopSessionsSessionIdRecomputePreparePostResponse = (recomputePrepareApiLoopSessionsSessionIdRecomputePreparePostResponseSuccess | recomputePrepareApiLoopSessionsSessionIdRecomputePreparePostResponseError)
+
+export const getRecomputePrepareApiLoopSessionsSessionIdRecomputePreparePostUrl = (sessionId: string,) => {
+
+
+
+
+  return `/api/loop/sessions/${sessionId}/recompute-prepare`
+}
+
+/**
+ * @summary Recompute Prepare
+ */
+export const recomputePrepareApiLoopSessionsSessionIdRecomputePreparePost = async (sessionId: string,
+    prepareRequest: PrepareRequest, options?: Parameters<typeof customFetch>[1]): Promise<recomputePrepareApiLoopSessionsSessionIdRecomputePreparePostResponse> => {
+
+  return customFetch<recomputePrepareApiLoopSessionsSessionIdRecomputePreparePostResponse>(getRecomputePrepareApiLoopSessionsSessionIdRecomputePreparePostUrl(sessionId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(prepareRequest)
+  }
+);}
+
+
+
+
+
+export const getRecomputePrepareApiLoopSessionsSessionIdRecomputePreparePostMutationOptions = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recomputePrepareApiLoopSessionsSessionIdRecomputePreparePost>>, TError,{sessionId: string;data: BodyType<PrepareRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof recomputePrepareApiLoopSessionsSessionIdRecomputePreparePost>>, TError,{sessionId: string;data: BodyType<PrepareRequest>}, TContext> => {
+
+const mutationKey = ['recomputePrepareApiLoopSessionsSessionIdRecomputePreparePost'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof recomputePrepareApiLoopSessionsSessionIdRecomputePreparePost>>, {sessionId: string;data: BodyType<PrepareRequest>}> = (props) => {
+          const {sessionId,data} = props ?? {};
+
+          return  recomputePrepareApiLoopSessionsSessionIdRecomputePreparePost(sessionId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type RecomputePrepareApiLoopSessionsSessionIdRecomputePreparePostMutationResult = NonNullable<Awaited<ReturnType<typeof recomputePrepareApiLoopSessionsSessionIdRecomputePreparePost>>>
+    export type RecomputePrepareApiLoopSessionsSessionIdRecomputePreparePostMutationBody = BodyType<PrepareRequest>
+    export type RecomputePrepareApiLoopSessionsSessionIdRecomputePreparePostMutationError = ErrorType<HTTPValidationError>
+
+    /**
+ * @summary Recompute Prepare
+ */
+export const useRecomputePrepareApiLoopSessionsSessionIdRecomputePreparePost = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recomputePrepareApiLoopSessionsSessionIdRecomputePreparePost>>, TError,{sessionId: string;data: BodyType<PrepareRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof recomputePrepareApiLoopSessionsSessionIdRecomputePreparePost>>,
+        TError,
+        {sessionId: string;data: BodyType<PrepareRequest>},
+        TContext
+      > => {
+      return useMutation(getRecomputePrepareApiLoopSessionsSessionIdRecomputePreparePostMutationOptions(options), queryClient);
+    }
 
 export type healthApiIdeaHealthGetResponse200 = {
   data: HealthApiIdeaHealthGet200

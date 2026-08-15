@@ -28,6 +28,7 @@ class LoopSession(Base):
         index=True,
     )
     title: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
     working_draft_node: Mapped[str] = mapped_column(String(64), nullable=False)
     working_draft_narrative: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     produced_spec_version_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), nullable=True)

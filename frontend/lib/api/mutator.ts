@@ -1,4 +1,5 @@
 import { API_BASE_URL, ApiError, getStoredToken, setStoredToken } from "./config";
+import { loginDestination } from "../auth-return";
 
 /**
  * Orval fetch mutator — attaches JWT Bearer and returns { data, status, headers }.
@@ -23,13 +24,14 @@ export async function customFetch<T>(url: string, options: RequestInit): Promise
   if (response.status === 401) {
     setStoredToken(null);
     if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
-      window.location.assign("/login");
+      const returnTo = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      window.location.assign(loginDestination(returnTo));
     }
     const detail =
       typeof data === "object" && data && "detail" in data && typeof data.detail === "string"
         ? data.detail
         : "Not authenticated";
-    throw new ApiError(401, detail);
+    throw new ApiError(401, detail, data);
   }
 
   if (!response.ok) {
@@ -37,7 +39,7 @@ export async function customFetch<T>(url: string, options: RequestInit): Promise
       typeof data === "object" && data && "detail" in data && typeof data.detail === "string"
         ? data.detail
         : response.statusText || `Request failed (${response.status})`;
-    throw new ApiError(response.status, detail);
+    throw new ApiError(response.status, detail, data);
   }
 
   return { data, status: response.status, headers: response.headers } as T;

@@ -15,6 +15,7 @@ class CreateSessionRequest(BaseModel):
 
 class PatchSessionRequest(BaseModel):
     title: str | None = Field(default=None, max_length=200)
+    expected_version: int = Field(ge=1)
 
 
 class WorkingDraftPatchRequest(BaseModel):
@@ -78,6 +79,7 @@ class DecisionResponse(BaseModel):
 class LoopSessionResponse(BaseModel):
     id: UUID
     title: str | None
+    version: int
     working_draft_node: WorkflowNode
     working_draft_narrative: dict[str, Any]
     node_heads: list[NodeHeadResponse]
@@ -91,7 +93,9 @@ class LoopSessionResponse(BaseModel):
 class LoopSessionSummary(BaseModel):
     id: UUID
     title: str | None
+    version: int
     working_draft_node: WorkflowNode
     created_at: datetime
+    updated_at: datetime
 
     model_config = {"from_attributes": True}
