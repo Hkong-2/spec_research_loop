@@ -30,6 +30,7 @@ class ConfirmRequest(BaseModel):
 
 class PrepareRequest(BaseModel):
     stage: LoopStage
+    expected_version: int = Field(ge=1)
 
 
 class CreateCardRequest(BaseModel):

@@ -58,10 +58,12 @@ async def _confirm(client: AsyncClient, session_id: str, node: str) -> dict:
     return response.json()
 
 
-async def _prepare(client: AsyncClient, session_id: str, stage: str) -> dict:
+async def _prepare(
+    client: AsyncClient, session_id: str, stage: str, expected_version: int
+) -> dict:
     response = await client.post(
         f"/api/loop/sessions/{session_id}/recompute-prepare",
-        json={"stage": stage},
+        json={"stage": stage, "expected_version": expected_version},
     )
     assert response.status_code == 200, response.text
     return response.json()
@@ -596,6 +598,61 @@ async def test_changed_interpretation_marks_decomposition_stale(client: AsyncCli
 
 
 @pytest.mark.asyncio
+async def test_prepare_requires_expected_version(client: AsyncClient) -> None:
+    await _auth_client(client)
+    created = await _create_session(client)
+    response = await client.post(
+        f"/api/loop/sessions/{created['id']}/recompute-prepare",
+        json={"stage": "grilling"},
+    )
+    assert response.status_code == 422
+    fetched = await client.get(f"/api/loop/sessions/{created['id']}")
+    assert fetched.json()["working_draft_node"] == "idea_interpretation"
+    assert fetched.json()["version"] == 1
+
+
+@pytest.mark.asyncio
+async def test_prepare_increments_version_and_returns_session(client: AsyncClient) -> None:
+    await _auth_client(client)
+    created = await _create_session(client)
+    payload = await _prepare(client, created["id"], "grilling", created["version"])
+    assert payload["version"] == 2
+    assert payload["working_draft_node"] == "idea_interpretation"
+    assert payload["working_draft_narrative"] == {}
+    assert _head(payload, "idea_interpretation")["status"] == "empty"
+    fetched = await client.get(f"/api/loop/sessions/{created['id']}")
+    assert fetched.json()["version"] == 2
+    assert fetched.json()["working_draft_node"] == "idea_interpretation"
+
+
+@pytest.mark.asyncio
+async def test_stale_prepare_is_version_conflict(client: AsyncClient) -> None:
+    await _auth_client(client)
+    created = await _create_session(client)
+    accepted = await client.patch(
+        f"/api/loop/sessions/{created['id']}",
+        json={"title": "Accepted", "expected_version": created["version"]},
+    )
+    assert accepted.status_code == 200
+    assert accepted.json()["version"] == 2
+
+    stale = await client.post(
+        f"/api/loop/sessions/{created['id']}/recompute-prepare",
+        json={"stage": "grilling", "expected_version": created["version"]},
+    )
+    assert stale.status_code == 409
+    assert stale.json() == {
+        "code": "version_conflict",
+        "detail": "Loop Session was changed by another request",
+        "current_version": 2,
+    }
+    fetched = await client.get(f"/api/loop/sessions/{created['id']}")
+    assert fetched.json()["title"] == "Accepted"
+    assert fetched.json()["version"] == 2
+    assert fetched.json()["working_draft_node"] == "idea_interpretation"
+
+
+@pytest.mark.asyncio
 async def test_prepare_grilling_lands_on_stale_decomposition(client: AsyncClient) -> None:
     await _auth_client(client)
     created = await _create_session(client)
@@ -610,18 +667,24 @@ async def test_prepare_grilling_lands_on_stale_decomposition(client: AsyncClient
     )
     assert card.status_code == 201
     await _confirm(client, session_id, "idea_decomposition")
-    await _patch_working_draft(
+    reopened = await _patch_working_draft(
         client,
         session_id,
         expected_version=card.json()["version"],
         node="idea_interpretation",
         narrative={"understanding": "latency"},
     )
+    assert reopened.status_code == 200
     await _confirm(client, session_id, "idea_interpretation")
-    payload = await _prepare(client, session_id, "grilling")
+    payload = await _prepare(client, session_id, "grilling", reopened.json()["version"])
     assert payload["working_draft_node"] == "idea_decomposition"
+    assert payload["version"] == reopened.json()["version"] + 1
     assert _head(payload, "idea_interpretation")["status"] == "current"
     assert _head(payload, "idea_decomposition")["status"] == "stale"
+    assert payload["working_draft_narrative"] == {}
+    fetched = await client.get(f"/api/loop/sessions/{session_id}")
+    problem = next(item for item in fetched.json()["cards"] if item["kind"] == "problem")
+    assert problem["body"] == {"text": "accuracy"}
 
 
 @pytest.mark.asyncio
@@ -633,9 +696,13 @@ async def test_prepare_grilling_conflicts_when_current(client: AsyncClient) -> N
     await _confirm(client, session_id, "idea_decomposition")
     response = await client.post(
         f"/api/loop/sessions/{session_id}/recompute-prepare",
-        json={"stage": "grilling"},
+        json={"stage": "grilling", "expected_version": created["version"]},
     )
     assert response.status_code == 409
+    assert response.json()["code"] == "stage_already_current"
+    fetched = await client.get(f"/api/loop/sessions/{session_id}")
+    assert fetched.json()["working_draft_node"] == "idea_decomposition"
+    assert fetched.json()["version"] == created["version"]
 
 
 @pytest.mark.asyncio
@@ -644,9 +711,12 @@ async def test_prepare_readiness_conflicts(client: AsyncClient) -> None:
     created = await _create_session(client)
     response = await client.post(
         f"/api/loop/sessions/{created['id']}/recompute-prepare",
-        json={"stage": "readiness"},
+        json={"stage": "readiness", "expected_version": created["version"]},
     )
     assert response.status_code == 409
+    assert response.json()["code"] == "stage_already_current"
+    fetched = await client.get(f"/api/loop/sessions/{created['id']}")
+    assert fetched.json()["version"] == 1
 
 
 @pytest.mark.asyncio
@@ -655,9 +725,13 @@ async def test_prepare_related_work_requires_grilling(client: AsyncClient) -> No
     created = await _create_session(client)
     response = await client.post(
         f"/api/loop/sessions/{created['id']}/recompute-prepare",
-        json={"stage": "related_work"},
+        json={"stage": "related_work", "expected_version": created["version"]},
     )
     assert response.status_code == 409
+    assert response.json()["code"] == "upstream_not_current"
+    fetched = await client.get(f"/api/loop/sessions/{created['id']}")
+    assert fetched.json()["working_draft_node"] == "idea_interpretation"
+    assert fetched.json()["version"] == 1
 
 
 @pytest.mark.asyncio
@@ -667,6 +741,7 @@ async def test_feasibility_confirm_mints_spec_version(client: AsyncClient) -> No
     session_id = created["id"]
     await _confirm(client, session_id, "idea_interpretation")
     await _confirm(client, session_id, "idea_decomposition")
+    expected_version = created["version"]
     for stage, node in (
         ("related_work", "research_inputs"),
         ("related_work", "related_work"),
@@ -677,9 +752,10 @@ async def test_feasibility_confirm_mints_spec_version(client: AsyncClient) -> No
         ("experiment_planning", "experiment_plan"),
         ("experiment_planning", "feasibility"),
     ):
-        prepared = await _prepare(client, session_id, stage)
+        prepared = await _prepare(client, session_id, stage, expected_version)
         assert prepared["working_draft_node"] == node
         await _confirm(client, session_id, node)
+        expected_version = prepared["version"]
     fetched = await client.get(f"/api/loop/sessions/{session_id}")
     payload = fetched.json()
     assert payload["produced_spec_version"] is not None

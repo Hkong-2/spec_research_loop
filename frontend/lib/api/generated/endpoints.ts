@@ -1638,6 +1638,11 @@ export type recomputePrepareApiLoopSessionsSessionIdRecomputePreparePostResponse
   status: 200
 }
 
+export type recomputePrepareApiLoopSessionsSessionIdRecomputePreparePostResponse409 = {
+  data: OperationalError
+  status: 409
+}
+
 export type recomputePrepareApiLoopSessionsSessionIdRecomputePreparePostResponse422 = {
   data: HTTPValidationError
   status: 422
@@ -1646,7 +1651,7 @@ export type recomputePrepareApiLoopSessionsSessionIdRecomputePreparePostResponse
 export type recomputePrepareApiLoopSessionsSessionIdRecomputePreparePostResponseSuccess = (recomputePrepareApiLoopSessionsSessionIdRecomputePreparePostResponse200) & {
   headers: Headers;
 };
-export type recomputePrepareApiLoopSessionsSessionIdRecomputePreparePostResponseError = (recomputePrepareApiLoopSessionsSessionIdRecomputePreparePostResponse422) & {
+export type recomputePrepareApiLoopSessionsSessionIdRecomputePreparePostResponseError = (recomputePrepareApiLoopSessionsSessionIdRecomputePreparePostResponse409 | recomputePrepareApiLoopSessionsSessionIdRecomputePreparePostResponse422) & {
   headers: Headers;
 };
 
@@ -1679,7 +1684,7 @@ export const recomputePrepareApiLoopSessionsSessionIdRecomputePreparePost = asyn
 
 
 
-export const getRecomputePrepareApiLoopSessionsSessionIdRecomputePreparePostMutationOptions = <TError = ErrorType<HTTPValidationError>,
+export const getRecomputePrepareApiLoopSessionsSessionIdRecomputePreparePostMutationOptions = <TError = ErrorType<OperationalError | HTTPValidationError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recomputePrepareApiLoopSessionsSessionIdRecomputePreparePost>>, TError,{sessionId: string;data: BodyType<PrepareRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
 ): UseMutationOptions<Awaited<ReturnType<typeof recomputePrepareApiLoopSessionsSessionIdRecomputePreparePost>>, TError,{sessionId: string;data: BodyType<PrepareRequest>}, TContext> => {
 
@@ -1708,12 +1713,12 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     export type RecomputePrepareApiLoopSessionsSessionIdRecomputePreparePostMutationResult = NonNullable<Awaited<ReturnType<typeof recomputePrepareApiLoopSessionsSessionIdRecomputePreparePost>>>
     export type RecomputePrepareApiLoopSessionsSessionIdRecomputePreparePostMutationBody = BodyType<PrepareRequest>
-    export type RecomputePrepareApiLoopSessionsSessionIdRecomputePreparePostMutationError = ErrorType<HTTPValidationError>
+    export type RecomputePrepareApiLoopSessionsSessionIdRecomputePreparePostMutationError = ErrorType<OperationalError | HTTPValidationError>
 
     /**
  * @summary Recompute Prepare
  */
-export const useRecomputePrepareApiLoopSessionsSessionIdRecomputePreparePost = <TError = ErrorType<HTTPValidationError>,
+export const useRecomputePrepareApiLoopSessionsSessionIdRecomputePreparePost = <TError = ErrorType<OperationalError | HTTPValidationError>,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof recomputePrepareApiLoopSessionsSessionIdRecomputePreparePost>>, TError,{sessionId: string;data: BodyType<PrepareRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof recomputePrepareApiLoopSessionsSessionIdRecomputePreparePost>>,

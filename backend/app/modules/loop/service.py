@@ -368,27 +368,39 @@ class LoopService:
         session_id: UUID,
         account_id: UUID,
         stage: LoopStage,
+        expected_version: int,
     ) -> LoopSessionResponse:
-        if stage is LoopStage.READINESS:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Readiness has no Workflow Nodes",
-            )
         session = await self._load_session(session_id, account_id)
+        if session.version != expected_version:
+            raise OperationalErrorException(
+                status_code=status.HTTP_409_CONFLICT,
+                code="version_conflict",
+                detail="Loop Session was changed by another request",
+                current_version=session.version,
+            )
         heads = {head.node_enum(): head for head in session.node_heads}
         for node in upstream_of_stage(stage):
             if heads[node].status_enum() != NodeHeadStatus.CURRENT:
-                raise HTTPException(
+                raise OperationalErrorException(
                     status_code=status.HTTP_409_CONFLICT,
+                    code="upstream_not_current",
                     detail="Upstream Node Heads of this Loop Stage must be current",
                 )
         status_map = {node: heads[node].status_enum() for node in LOOP_STAGE_NODES[stage]}
         landing = first_needs_work(stage, status_map)
         if landing is None:
-            raise HTTPException(
+            raise OperationalErrorException(
                 status_code=status.HTTP_409_CONFLICT,
+                code="stage_already_current",
                 detail="Every Workflow Node in this Loop Stage is current",
             )
+
+        await self._increment_session_version(
+            session,
+            session_id=session_id,
+            account_id=account_id,
+            expected_version=expected_version,
+        )
 
         revisions = {rev.id: rev for rev in session.stage_revisions}
         for node in LOOP_STAGE_NODES[stage]:
@@ -414,8 +426,9 @@ class LoopService:
             )
 
         session.working_draft_node = landing.value
+        response = await self._to_response(session)
         await self._db.commit()
-        return await self.get_session(session_id=session_id, account_id=account_id)
+        return response
 
     async def project_context(self, *, session_id: UUID, account_id: UUID, node: WorkflowNode) -> dict[str, Any]:
         session = await self._load_session(session_id, account_id)

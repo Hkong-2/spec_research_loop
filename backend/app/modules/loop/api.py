@@ -173,7 +173,11 @@ async def confirm(
     return await _service(db).confirm(session_id=session_id, account_id=account.id, node=body.node)
 
 
-@router.post("/sessions/{session_id}/recompute-prepare", response_model=LoopSessionResponse)
+@router.post(
+    "/sessions/{session_id}/recompute-prepare",
+    response_model=LoopSessionResponse,
+    responses={409: {"model": OperationalError}},
+)
 async def recompute_prepare(
     session_id: UUID,
     body: PrepareRequest,
@@ -184,4 +188,5 @@ async def recompute_prepare(
         session_id=session_id,
         account_id=account.id,
         stage=body.stage,
+        expected_version=body.expected_version,
     )

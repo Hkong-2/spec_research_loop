@@ -8,4 +8,6 @@ import type { LoopStage } from './loopStage';
 
 export interface PrepareRequest {
   stage: LoopStage;
+  /** @minimum 1 */
+  expected_version: number;
 }

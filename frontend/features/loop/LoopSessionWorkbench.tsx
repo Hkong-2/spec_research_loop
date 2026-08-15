@@ -1,13 +1,27 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LoopStage, NodeHeadStatus, type NodeHeadResponse, type WorkflowNode } from "@/lib/api/generated/model";
-import { useGetSessionApiLoopSessionsSessionIdGet } from "@/lib/api/generated/endpoints";
+import { getApiErrorMessage } from "@/lib/api/config";
+import {
+  getGetSessionApiLoopSessionsSessionIdGetQueryKey,
+  useGetSessionApiLoopSessionsSessionIdGet,
+  usePatchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatch,
+  useRecomputePrepareApiLoopSessionsSessionIdRecomputePreparePost,
+} from "@/lib/api/generated/endpoints";
+import {
+  LoopStage,
+  NodeHeadStatus,
+  type LoopSessionResponse,
+  type NodeHeadResponse,
+  type OperationalError,
+  type WorkflowNode,
+} from "@/lib/api/generated/model";
 import { cn } from "@/lib/utils";
 
 import {
@@ -20,9 +34,11 @@ import {
 import { LoopSessionTitleEditor } from "./LoopSessionTitleEditor";
 import { WorkingDraftCardCanvas } from "./WorkingDraftCardCanvas";
 import { WorkingDraftNarrativeEditor } from "./WorkingDraftNarrativeEditor";
-import { LoopSessionSaveProvider } from "./loop-session-save";
+import { LoopSessionSaveProvider, useLoopSessionSave } from "./loop-session-save";
+import { operationalError } from "./operational-error";
 import { LOOP_STAGE_ICONS } from "./stage-icons";
 import {
+  deriveStageActions,
   deriveStageSignals,
   incompleteUpstreamNodes,
   type CompletionSignal,
@@ -54,11 +70,49 @@ function completionClass(completion: CompletionSignal): string {
   }
 }
 
+function newerSession(
+  current: LoopSessionResponse | null,
+  candidate: LoopSessionResponse | null,
+): LoopSessionResponse | null {
+  if (!current) return candidate;
+  if (!candidate) return current;
+  return candidate.version >= current.version ? candidate : current;
+}
+
+function transitionMessage(error: OperationalError): string {
+  switch (error.code) {
+    case "version_conflict":
+      return "Another request changed this Loop Session (version conflict). Your current Working Draft was kept.";
+    case "upstream_not_current":
+      return "Upstream Workflow Nodes are not current. Your current Working Draft was kept.";
+    case "stage_already_current":
+      return "Every Workflow Node in this Loop Stage is already current. Your current Working Draft was kept.";
+    default:
+      return error.detail;
+  }
+}
+
 export function LoopSessionWorkbench({ sessionId }: { sessionId: string }) {
+  return (
+    <LoopSessionSaveProvider>
+      <LoopSessionWorkbenchView sessionId={sessionId} />
+    </LoopSessionSaveProvider>
+  );
+}
+
+function LoopSessionWorkbenchView({ sessionId }: { sessionId: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
+  const { queue } = useLoopSessionSave();
   const sessionQuery = useGetSessionApiLoopSessionsSessionIdGet(sessionId);
-  const session = sessionQuery.data?.status === 200 ? sessionQuery.data.data : null;
+  const prepareMutation = useRecomputePrepareApiLoopSessionsSessionIdRecomputePreparePost();
+  const patchWorkingDraft = usePatchWorkingDraftApiLoopSessionsSessionIdWorkingDraftPatch();
+  const [appliedSession, setAppliedSession] = useState<LoopSessionResponse | null>(null);
+  const [transitionError, setTransitionError] = useState<OperationalError | null>(null);
+
+  const queriedSession = sessionQuery.data?.status === 200 ? sessionQuery.data.data : null;
+  const session = newerSession(queriedSession, appliedSession);
   const selectedStage = session
     ? resolveSelectedStage(searchParams.get("stage"), session.working_draft_node)
     : null;
@@ -93,9 +147,60 @@ export function LoopSessionWorkbench({ sessionId }: { sessionId: string }) {
     stage: selectedStage,
     nodeHeads: session.node_heads,
   });
+  const actions = deriveStageActions({
+    stage: selectedStage,
+    nodeHeads: session.node_heads,
+  });
+  const sessionKey = getGetSessionApiLoopSessionsSessionIdGetQueryKey(sessionId);
+
+  function expectedVersion(): number {
+    const cached = queryClient.getQueryData(sessionKey) as
+      | { status: number; data: LoopSessionResponse }
+      | undefined;
+    if (cached?.status === 200) {
+      return cached.data.version;
+    }
+    return session?.version ?? 1;
+  }
+
+  async function applyTransition(
+    mutate: (expectedVersion: number) => Promise<{ status: number; data: unknown }>,
+  ) {
+    await queue.flush();
+    try {
+      const response = await queue.enqueue(() => mutate(expectedVersion()));
+      if (response.status === 200) {
+        queryClient.setQueryData(sessionKey, response);
+        setAppliedSession(response.data as LoopSessionResponse);
+        setTransitionError(null);
+      }
+    } catch (error) {
+      const typed = operationalError(error);
+      setTransitionError(typed ?? { code: "", detail: getApiErrorMessage(error) });
+    }
+  }
+
+  function startOrRecompute() {
+    if (!selectedStage) return;
+    const stage = selectedStage;
+    void applyTransition((version) =>
+      prepareMutation.mutateAsync({
+        sessionId,
+        data: { stage, expected_version: version },
+      }),
+    );
+  }
+
+  function editConfirmedWork(node: WorkflowNode) {
+    void applyTransition((version) =>
+      patchWorkingDraft.mutateAsync({
+        sessionId,
+        data: { node, expected_version: version },
+      }),
+    );
+  }
 
   return (
-    <LoopSessionSaveProvider>
     <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 lg:grid-cols-12">
       <aside className="grid gap-4 lg:col-span-3 xl:col-span-3">
         <div className="rounded-md border bg-card p-3 shadow-sm">
@@ -186,12 +291,59 @@ export function LoopSessionWorkbench({ sessionId }: { sessionId: string }) {
                   </ul>
                 </div>
               ) : null}
+              {actions.canStart || actions.canRecompute || actions.editableNodes.length > 0 ? (
+                <div className="grid gap-3">
+                  {actions.canStart ? (
+                    <Button onClick={startOrRecompute}>Start</Button>
+                  ) : null}
+                  {actions.canRecompute ? (
+                    <Button onClick={startOrRecompute}>Recompute</Button>
+                  ) : null}
+                  {actions.editableNodes.length > 0 ? (
+                    <div className="grid gap-2">
+                      <p className="text-sm font-medium">Edit confirmed work</p>
+                      <div className="flex flex-wrap gap-2">
+                        {actions.editableNodes.map((node) => (
+                          <Button
+                            key={node}
+                            variant="outline"
+                            onClick={() => editConfirmedWork(node)}
+                          >
+                            Edit {WORKFLOW_NODE_LABELS[node]}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+              {transitionError ? (
+                <div role="alert" className="rounded-md border border-pending bg-card p-3">
+                  <p className="text-sm">{transitionMessage(transitionError)}</p>
+                  {transitionError.code === "version_conflict" ? (
+                    <Button
+                      className="mt-3"
+                      variant="outline"
+                      onClick={() => {
+                        void sessionQuery.refetch().then((refreshed) => {
+                          if (refreshed.data?.status === 200) {
+                            queryClient.setQueryData(sessionKey, refreshed.data);
+                            setAppliedSession(refreshed.data.data);
+                            setTransitionError(null);
+                          }
+                        });
+                      }}
+                    >
+                      Load current Loop Session
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
             </CardContent>
           </Card>
         </section>
       </div>
     </div>
-    </LoopSessionSaveProvider>
   );
 }
 

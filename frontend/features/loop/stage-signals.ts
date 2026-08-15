@@ -24,6 +24,34 @@ export function incompleteUpstreamNodes({
   );
 }
 
+export type StageActions = {
+  canStart: boolean;
+  canRecompute: boolean;
+  editableNodes: WorkflowNode[];
+};
+
+export function deriveStageActions({
+  stage,
+  nodeHeads,
+}: {
+  stage: LoopStage;
+  nodeHeads: NodeHeadResponse[];
+}): StageActions {
+  const nodes = catalogStage(stage).nodes;
+  if (nodes.length === 0 || incompleteUpstreamNodes({ stage, nodeHeads }).length > 0) {
+    return { canStart: false, canRecompute: false, editableNodes: [] };
+  }
+  const statusByNode = new Map(nodeHeads.map((head) => [head.node, head.status]));
+  const statuses = nodes.map((node) => statusByNode.get(node) ?? NodeHeadStatus.empty);
+  const hasEmpty = statuses.includes(NodeHeadStatus.empty);
+  const hasStale = statuses.includes(NodeHeadStatus.stale);
+  return {
+    canStart: hasEmpty && !hasStale,
+    canRecompute: hasStale,
+    editableNodes: nodes.filter((node) => statusByNode.get(node) === NodeHeadStatus.current),
+  };
+}
+
 export function deriveStageSignals({
   stage,
   nodeHeads,
