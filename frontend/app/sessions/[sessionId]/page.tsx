@@ -9,7 +9,7 @@ export default async function LoopSessionPage({
 }) {
   const { sessionId } = await params;
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
+    <main className="px-4 py-6 sm:px-6">
       <Suspense fallback={<p className="text-muted-foreground">Loading Loop Session…</p>}>
         <AuthenticatedLoopSession sessionId={sessionId} />
       </Suspense>

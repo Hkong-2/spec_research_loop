@@ -1,0 +1,197 @@
+import { describe, expect, it } from "vitest";
+
+import { LoopStage, NodeHeadStatus, WorkflowNode } from "@/lib/api/generated/model";
+import type { NodeHeadResponse } from "@/lib/api/generated/model";
+
+import { deriveStageSignals, incompleteUpstreamNodes } from "./stage-signals";
+
+function heads(
+  overrides: Partial<Record<WorkflowNode, NodeHeadStatus>> = {},
+): NodeHeadResponse[] {
+  return Object.values(WorkflowNode).map((node) => ({
+    node,
+    status: overrides[node] ?? NodeHeadStatus.empty,
+    stage_revision_id: null,
+  }));
+}
+
+describe("Loop Stage signals", () => {
+  it("marks Grilling as needs work when both Node Heads are empty", () => {
+    expect(
+      deriveStageSignals({
+        stage: LoopStage.grilling,
+        nodeHeads: heads(),
+        workingDraftNode: WorkflowNode.idea_interpretation,
+      }),
+    ).toEqual({
+      completion: "needs_work",
+      editing: true,
+      available: true,
+    });
+  });
+
+  it("marks Grilling as needs work when interpretation is current and decomposition is empty", () => {
+    expect(
+      deriveStageSignals({
+        stage: LoopStage.grilling,
+        nodeHeads: heads({
+          [WorkflowNode.idea_interpretation]: NodeHeadStatus.current,
+        }),
+        workingDraftNode: WorkflowNode.idea_decomposition,
+      }),
+    ).toEqual({
+      completion: "needs_work",
+      editing: true,
+      available: true,
+    });
+  });
+
+  it("marks Grilling complete when both Node Heads are current", () => {
+    expect(
+      deriveStageSignals({
+        stage: LoopStage.grilling,
+        nodeHeads: heads({
+          [WorkflowNode.idea_interpretation]: NodeHeadStatus.current,
+          [WorkflowNode.idea_decomposition]: NodeHeadStatus.current,
+        }),
+        workingDraftNode: WorkflowNode.research_inputs,
+      }),
+    ).toEqual({
+      completion: "complete",
+      editing: false,
+      available: true,
+    });
+  });
+
+  it("keeps Complete and Editing independent when a current Grilling node is the Working Draft", () => {
+    expect(
+      deriveStageSignals({
+        stage: LoopStage.grilling,
+        nodeHeads: heads({
+          [WorkflowNode.idea_interpretation]: NodeHeadStatus.current,
+          [WorkflowNode.idea_decomposition]: NodeHeadStatus.current,
+        }),
+        workingDraftNode: WorkflowNode.idea_interpretation,
+      }),
+    ).toEqual({
+      completion: "complete",
+      editing: true,
+      available: true,
+    });
+  });
+
+  it("marks Grilling stale when any Node Head is stale, even if the other is current", () => {
+    expect(
+      deriveStageSignals({
+        stage: LoopStage.grilling,
+        nodeHeads: heads({
+          [WorkflowNode.idea_interpretation]: NodeHeadStatus.stale,
+          [WorkflowNode.idea_decomposition]: NodeHeadStatus.current,
+        }),
+        workingDraftNode: WorkflowNode.idea_interpretation,
+      }),
+    ).toEqual({
+      completion: "stale",
+      editing: true,
+      available: true,
+    });
+  });
+
+  it("marks Grilling stale when Node Heads mix empty and stale", () => {
+    expect(
+      deriveStageSignals({
+        stage: LoopStage.grilling,
+        nodeHeads: heads({
+          [WorkflowNode.idea_interpretation]: NodeHeadStatus.empty,
+          [WorkflowNode.idea_decomposition]: NodeHeadStatus.stale,
+        }),
+        workingDraftNode: WorkflowNode.idea_decomposition,
+      }),
+    ).toEqual({
+      completion: "stale",
+      editing: true,
+      available: true,
+    });
+  });
+
+  it("does not treat Related work as available while Grilling Node Heads are incomplete", () => {
+    expect(
+      deriveStageSignals({
+        stage: LoopStage.related_work,
+        nodeHeads: heads({
+          [WorkflowNode.idea_interpretation]: NodeHeadStatus.current,
+        }),
+        workingDraftNode: WorkflowNode.idea_decomposition,
+      }),
+    ).toEqual({
+      completion: "needs_work",
+      editing: false,
+      available: false,
+    });
+  });
+
+  it("makes Related work available only after both Grilling Node Heads are current", () => {
+    expect(
+      deriveStageSignals({
+        stage: LoopStage.related_work,
+        nodeHeads: heads({
+          [WorkflowNode.idea_interpretation]: NodeHeadStatus.current,
+          [WorkflowNode.idea_decomposition]: NodeHeadStatus.current,
+        }),
+        workingDraftNode: WorkflowNode.research_inputs,
+      }),
+    ).toEqual({
+      completion: "needs_work",
+      editing: true,
+      available: true,
+    });
+  });
+
+  it("marks Related work stale from any stale Node Head among its three Workflow Nodes", () => {
+    expect(
+      deriveStageSignals({
+        stage: LoopStage.related_work,
+        nodeHeads: heads({
+          [WorkflowNode.idea_interpretation]: NodeHeadStatus.current,
+          [WorkflowNode.idea_decomposition]: NodeHeadStatus.current,
+          [WorkflowNode.research_inputs]: NodeHeadStatus.current,
+          [WorkflowNode.related_work]: NodeHeadStatus.stale,
+          [WorkflowNode.gap]: NodeHeadStatus.empty,
+        }),
+        workingDraftNode: WorkflowNode.related_work,
+      }),
+    ).toEqual({
+      completion: "stale",
+      editing: true,
+      available: true,
+    });
+  });
+
+  it("displays Readiness as Not evaluated with no completion proxy", () => {
+    expect(
+      deriveStageSignals({
+        stage: LoopStage.readiness,
+        nodeHeads: heads({
+          [WorkflowNode.idea_interpretation]: NodeHeadStatus.current,
+          [WorkflowNode.idea_decomposition]: NodeHeadStatus.current,
+        }),
+        workingDraftNode: WorkflowNode.idea_decomposition,
+      }),
+    ).toEqual({
+      completion: "not_evaluated",
+      editing: false,
+      available: true,
+    });
+  });
+
+  it("lists incomplete upstream Workflow Nodes for an unavailable Loop Stage", () => {
+    expect(
+      incompleteUpstreamNodes({
+        stage: LoopStage.related_work,
+        nodeHeads: heads({
+          [WorkflowNode.idea_interpretation]: NodeHeadStatus.current,
+        }),
+      }),
+    ).toEqual([WorkflowNode.idea_decomposition]);
+  });
+});

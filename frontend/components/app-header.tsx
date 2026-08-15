@@ -26,11 +26,14 @@ export function AppHeader() {
         </Link>
         <div className="ml-auto flex items-center gap-4">
           <Link
-            href="/demo"
-            aria-current={pathname === "/demo" ? "page" : undefined}
-            className={cn(linkClass, pathname === "/demo" && "text-navy-foreground underline decoration-primary underline-offset-4")}
+            href="/sessions"
+            aria-current={pathname.startsWith("/sessions") ? "page" : undefined}
+            className={cn(
+              linkClass,
+              pathname.startsWith("/sessions") && "text-navy-foreground underline decoration-primary underline-offset-4",
+            )}
           >
-            Loop Session
+            Loop Sessions
           </Link>
           {!ready || isLoading ? (
             <span className="text-navy-foreground/80" aria-live="polite">

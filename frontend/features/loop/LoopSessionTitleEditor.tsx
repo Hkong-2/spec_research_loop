@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -173,10 +172,7 @@ export function LoopSessionTitleEditor({ sessionId }: { sessionId: string }) {
 
   return (
     <div>
-      <Link className="text-sm text-in-progress underline-offset-4 hover:underline" href="/sessions">
-        ← All Loop Sessions
-      </Link>
-      <Card className="mt-4">
+      <Card>
         <CardHeader>
           <CardTitle>{title || "Untitled Loop Session"}</CardTitle>
           <CardDescription>Rename this Loop Session without overwriting newer changes.</CardDescription>

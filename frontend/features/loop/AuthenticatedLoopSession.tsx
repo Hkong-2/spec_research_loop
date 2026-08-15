@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useAccount } from "@/features/identity";
 import { loginDestination } from "@/lib/auth-return";
 
-import { LoopSessionTitleEditor } from "./LoopSessionTitleEditor";
+import { LoopSessionWorkbench } from "./LoopSessionWorkbench";
 
 export function AuthenticatedLoopSession({ sessionId }: { sessionId: string }) {
   const account = useAccount();
@@ -27,5 +27,5 @@ export function AuthenticatedLoopSession({ sessionId }: { sessionId: string }) {
   if (!account.hasToken) {
     return <p className="text-muted-foreground">Redirecting to sign in…</p>;
   }
-  return <LoopSessionTitleEditor sessionId={sessionId} />;
+  return <LoopSessionWorkbench sessionId={sessionId} />;
 }

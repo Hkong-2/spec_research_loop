@@ -1,22 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { BadgeCheck, FlaskConical, Library, ListChecks, MessageSquare, Scale } from "lucide-react";
 
 import { API_BASE_URL } from "@/lib/api";
 import { useAccount } from "@/features/identity";
-import { LOOP_STAGES } from "@/lib/loop-stages";
+import { LOOP_STAGE_CATALOG } from "@/features/loop/catalog";
+import { LOOP_STAGE_ICONS } from "@/features/loop/stage-icons";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-const STAGE_ICONS = {
-  grilling: MessageSquare,
-  "related-work": Library,
-  claims: BadgeCheck,
-  experiments: FlaskConical,
-  judges: Scale,
-  readiness: ListChecks,
-} as const;
 
 export default function HomePage() {
   const { signedIn } = useAccount();
@@ -31,7 +22,7 @@ export default function HomePage() {
             </h1>
             <p className="mt-4 max-w-2xl text-lg text-muted-foreground">
               SpecResearch Loop is a human-in-the-loop workflow: grilling, related work,
-              claims and evidence, experiment planning, and independent judges.
+              contribution, claims and evidence, experiment planning, and independent judges.
             </p>
             <p className="mt-3 max-w-2xl text-sm text-muted-foreground">
               The system evaluates readiness criteria. It does not guarantee conference acceptance.
@@ -56,8 +47,8 @@ export default function HomePage() {
           You confirm each stage. Nothing is autopilot research.
         </p>
         <ol className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {LOOP_STAGES.map((stage, index) => {
-            const Icon = STAGE_ICONS[stage.id];
+          {LOOP_STAGE_CATALOG.map((stage, index) => {
+            const Icon = LOOP_STAGE_ICONS[stage.id];
             return (
               <li key={stage.id} className="rounded-md border bg-card p-4 shadow-sm">
                 <Icon aria-hidden="true" className="size-5 text-navy" />
