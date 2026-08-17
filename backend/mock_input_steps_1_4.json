@@ -1,0 +1,5 @@
+{
+  "problem": "Prompt thủ công có thể không ổn định, dẫn đến hallucination khi LLM trích xuất thông tin từ paper.",
+  "research_gap": "Các phương pháp hiện tại chưa tối ưu trực tiếp ở mức claim-evidence. Chưa rõ việc tách output thành từng claim, kiểm tra evidence độc lập và dùng lỗi claim-level làm feedback có giúp giảm unsupported claims hay không.",
+  "proposed_approach": "Xây dựng phương pháp tự động tối ưu prompt nhiều vòng để giảm hallucination khi LLM trích xuất thông tin từ paper bằng cách sử dụng claim-level evidence feedback."
+}
