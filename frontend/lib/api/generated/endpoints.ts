@@ -47,6 +47,9 @@ import type {
   PrepareRequest,
   RegisterRequest,
   RootHealthHealthGet200,
+  Stage5ConfirmRequest,
+  Stage5ConfirmResponse,
+  Stage5DraftResponse,
   TokenResponse,
   WorkingDraftPatchRequest
 } from './model';
@@ -2072,6 +2075,212 @@ export function useHealthApiSpecHealthGet<TData = Awaited<ReturnType<typeof heal
 
 
 
+
+export type getStage5DraftApiSpecStage5DraftGetResponse200 = {
+  data: Stage5DraftResponse
+  status: 200
+}
+
+export type getStage5DraftApiSpecStage5DraftGetResponseSuccess = (getStage5DraftApiSpecStage5DraftGetResponse200) & {
+  headers: Headers;
+};
+;
+
+export type getStage5DraftApiSpecStage5DraftGetResponse = (getStage5DraftApiSpecStage5DraftGetResponseSuccess)
+
+export const getGetStage5DraftApiSpecStage5DraftGetUrl = () => {
+
+
+
+
+  return `/api/spec/stage-5/draft`
+}
+
+/**
+ * Returns the current in-memory draft if it exists.
+ * Otherwise, generates a new draft using the LLM and the mock context.
+ * @summary Get Stage 5 Draft
+ */
+export const getStage5DraftApiSpecStage5DraftGet = async ( options?: Parameters<typeof customFetch>[1]): Promise<getStage5DraftApiSpecStage5DraftGetResponse> => {
+
+  return customFetch<getStage5DraftApiSpecStage5DraftGetResponse>(getGetStage5DraftApiSpecStage5DraftGetUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetStage5DraftApiSpecStage5DraftGetQueryKey = () => {
+    return [
+    `/api/spec/stage-5/draft`
+    ] as const;
+    }
+
+
+export const getGetStage5DraftApiSpecStage5DraftGetQueryOptions = <TData = Awaited<ReturnType<typeof getStage5DraftApiSpecStage5DraftGet>>, TError = ErrorType<unknown>>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStage5DraftApiSpecStage5DraftGet>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetStage5DraftApiSpecStage5DraftGetQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getStage5DraftApiSpecStage5DraftGet>>> = ({ signal }) => getStage5DraftApiSpecStage5DraftGet({ signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getStage5DraftApiSpecStage5DraftGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type GetStage5DraftApiSpecStage5DraftGetQueryResult = NonNullable<Awaited<ReturnType<typeof getStage5DraftApiSpecStage5DraftGet>>>
+export type GetStage5DraftApiSpecStage5DraftGetQueryError = ErrorType<unknown>
+
+
+export function useGetStage5DraftApiSpecStage5DraftGet<TData = Awaited<ReturnType<typeof getStage5DraftApiSpecStage5DraftGet>>, TError = ErrorType<unknown>>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStage5DraftApiSpecStage5DraftGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getStage5DraftApiSpecStage5DraftGet>>,
+          TError,
+          Awaited<ReturnType<typeof getStage5DraftApiSpecStage5DraftGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetStage5DraftApiSpecStage5DraftGet<TData = Awaited<ReturnType<typeof getStage5DraftApiSpecStage5DraftGet>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStage5DraftApiSpecStage5DraftGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof getStage5DraftApiSpecStage5DraftGet>>,
+          TError,
+          Awaited<ReturnType<typeof getStage5DraftApiSpecStage5DraftGet>>
+        > , 'initialData'
+      >, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+export function useGetStage5DraftApiSpecStage5DraftGet<TData = Awaited<ReturnType<typeof getStage5DraftApiSpecStage5DraftGet>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStage5DraftApiSpecStage5DraftGet>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * @summary Get Stage 5 Draft
+ */
+
+export function useGetStage5DraftApiSpecStage5DraftGet<TData = Awaited<ReturnType<typeof getStage5DraftApiSpecStage5DraftGet>>, TError = ErrorType<unknown>>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof getStage5DraftApiSpecStage5DraftGet>>, TError, TData>>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getGetStage5DraftApiSpecStage5DraftGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export type confirmStage5ApiSpecStage5ConfirmPostResponse200 = {
+  data: Stage5ConfirmResponse
+  status: 200
+}
+
+export type confirmStage5ApiSpecStage5ConfirmPostResponse422 = {
+  data: HTTPValidationError
+  status: 422
+}
+
+export type confirmStage5ApiSpecStage5ConfirmPostResponseSuccess = (confirmStage5ApiSpecStage5ConfirmPostResponse200) & {
+  headers: Headers;
+};
+export type confirmStage5ApiSpecStage5ConfirmPostResponseError = (confirmStage5ApiSpecStage5ConfirmPostResponse422) & {
+  headers: Headers;
+};
+
+export type confirmStage5ApiSpecStage5ConfirmPostResponse = (confirmStage5ApiSpecStage5ConfirmPostResponseSuccess | confirmStage5ApiSpecStage5ConfirmPostResponseError)
+
+export const getConfirmStage5ApiSpecStage5ConfirmPostUrl = () => {
+
+
+
+
+  return `/api/spec/stage-5/confirm`
+}
+
+/**
+ * Confirms and saves the stage 5 draft (in-memory for now).
+ * @summary Confirm Stage 5
+ */
+export const confirmStage5ApiSpecStage5ConfirmPost = async (stage5ConfirmRequest: Stage5ConfirmRequest, options?: Parameters<typeof customFetch>[1]): Promise<confirmStage5ApiSpecStage5ConfirmPostResponse> => {
+
+  return customFetch<confirmStage5ApiSpecStage5ConfirmPostResponse>(getConfirmStage5ApiSpecStage5ConfirmPostUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(stage5ConfirmRequest)
+  }
+);}
+
+
+
+
+
+export const getConfirmStage5ApiSpecStage5ConfirmPostMutationOptions = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmStage5ApiSpecStage5ConfirmPost>>, TError,{data: BodyType<Stage5ConfirmRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof confirmStage5ApiSpecStage5ConfirmPost>>, TError,{data: BodyType<Stage5ConfirmRequest>}, TContext> => {
+
+const mutationKey = ['confirmStage5ApiSpecStage5ConfirmPost'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof confirmStage5ApiSpecStage5ConfirmPost>>, {data: BodyType<Stage5ConfirmRequest>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  confirmStage5ApiSpecStage5ConfirmPost(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ConfirmStage5ApiSpecStage5ConfirmPostMutationResult = NonNullable<Awaited<ReturnType<typeof confirmStage5ApiSpecStage5ConfirmPost>>>
+    export type ConfirmStage5ApiSpecStage5ConfirmPostMutationBody = BodyType<Stage5ConfirmRequest>
+    export type ConfirmStage5ApiSpecStage5ConfirmPostMutationError = ErrorType<HTTPValidationError>
+
+    /**
+ * @summary Confirm Stage 5
+ */
+export const useConfirmStage5ApiSpecStage5ConfirmPost = <TError = ErrorType<HTTPValidationError>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof confirmStage5ApiSpecStage5ConfirmPost>>, TError,{data: BodyType<Stage5ConfirmRequest>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof confirmStage5ApiSpecStage5ConfirmPost>>,
+        TError,
+        {data: BodyType<Stage5ConfirmRequest>},
+        TContext
+      > => {
+      return useMutation(getConfirmStage5ApiSpecStage5ConfirmPostMutationOptions(options), queryClient);
+    }
 
 export type healthApiJudgementHealthGetResponse200 = {
   data: HealthApiJudgementHealthGet200
