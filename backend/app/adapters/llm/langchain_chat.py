@@ -62,3 +62,30 @@ class LangChainChatAdapter:
             return _message_text(message.content)
         content = getattr(message, "content", message)
         return _message_text(content)
+
+    async def complete_structured(self, *, system: str, prompt: str, schema: type, model: str | None = None):
+        settings = get_settings()
+        if not settings.llm_api_key:
+            raise LlmCompleteError("LLM_API_KEY is not set")
+        resolved = model or settings.llm_default_model
+        if not resolved:
+            raise LlmCompleteError("LLM model is not set")
+        try:
+            chat = ChatOpenAI(
+                model=resolved,
+                api_key=settings.llm_api_key,
+                base_url=settings.llm_base_url or None,
+            )
+            structured_chat = chat.with_structured_output(schema)
+            chain = _PROMPT | structured_chat
+            result = await chain.ainvoke(
+                {
+                    "system": _escape_template(system),
+                    "prompt": _escape_template(prompt),
+                }
+            )
+            return result
+        except LlmCompleteError:
+            raise
+        except Exception as exc:
+            raise LlmCompleteError(str(exc)) from exc
